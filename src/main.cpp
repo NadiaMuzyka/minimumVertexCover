@@ -4,12 +4,15 @@ using namespace std;
 vector<int> approxVertexCover(int n, const vector<pair<int,int>>& edges);
 
 int main(int argc, char* argv[]) {
+
+    //se mancano i parametri faccio vedere all'utente cosa voglio
     if (argc < 2) {
         cerr << "Usage: " << argv[0] << " <graph_file>\n";
         return 1;
     }
 
     ifstream fin(argv[1]);
+    //Se non riesco ad ap
     if (!fin) {
         cerr << "Cannot open file: " << argv[1] << "\n";
         return 1;

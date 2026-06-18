@@ -16,6 +16,7 @@
 
 % ── Graphics & colors ────────────────────────────────────────────────
 \usepackage{graphicx}
+\graphicspath{{Immagini/}}
 \usepackage[dvipsnames]{xcolor}
 \usepackage{tikz}
 
@@ -68,12 +69,19 @@
   breakable
 }
 
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm} % Gestisce teoremi, definizioni e lemmi
+
+% Definisci lo stile per le definizioni (testo dritto, non corsivo)
+\theoremstyle{definition}
+\newtheorem{definiz}{Definizione}[section] % [section] resetta il contatore a ogni capitolo
+
 % ── Headers & footers ────────────────────────────────────────────────
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\textit{Big Data Processing}}
-\fancyhead[R]{\small\textit{Capitolo 1 -- MapReduce}}
+\fancyhead[L]{\small\textit{Minimum Vertex Cover}}
 \fancyfoot[C]{\thepage}
 
 % ── Hyperlinks ───────────────────────────────────────────────────────
@@ -83,8 +91,8 @@
   linkcolor=black,
   urlcolor=NavyBlue,
   citecolor=NavyBlue,
-  pdftitle={Appunti Big Data -- Capitolo 1},
-  pdfauthor={Appunti personali}
+  pdftitle={Minimum Vertex Cover },
+  pdfauthor={Nadia Muzyka}
 }
 
 % ── subsection formatting ───────────────────────────────────────────────
@@ -95,7 +103,7 @@
 
 % Impostazioni per limitare l'indice al 3° livello lasciando il 4° nel testo
 \setcounter{secnumdepth}{4} % Mostra la numerazione nel testo (es. 1.1.1.1)
-\setcounter{tocdepth}{1}    % Mostra nell'indice solo fino alla subsection
+\setcounter{tocdepth}{2}    % Mostra nell'indice solo fino alla subsection
 
 % ── Enumitem ─────────────────────────────────────────────────────────
 \usepackage{enumitem}
@@ -109,28 +117,42 @@
 \newcommand{\REDUCE}{\texttt{REDUCE}}
 \newcommand{\Lk}{L_k}
 
+
+\usepackage[ruled,vlined,linesnumbered,italiano]{algorithm2e}
+\usepackage{amssymb} % Per il simbolo del vuoto \emptyset
+\usepackage{amsthm} % Il pacchetto fondamentale per teoremi e dimostrazioni
+\newtheorem{teorema}{Teorema}[section] % Teoremi numerati per sezione
 % ─────────────────────────────────────────────────────────────────────
 \begin{document}
 
 % ── Titolo ───────────────────────────────────────────────────────────
 \begin{titlepage}
-  \centering
-  \vspace*{3cm}
-  {\Huge\bfseries\color{black} Appunti di Big Data Processing}\\[1em]
-  
-  \rule{\linewidth}{0.5pt}\\[1em]
-  {\large Basati sulle lezioni del Prof.~Mattia D'Emidio}\\
-  {\large Università degli Studi dell'Aquila}\\[0.5em]
-  {\large Marzo 2026}\\[3cm]
-  \tableofcontents
+    \centering
+    \vspace*{3cm}
+    \includegraphics[height=3cm]{logo.png}\\[1.5cm]
+    
+    % Barra verticale immaginaria (usiamo una spaziatura generosa)
+    {\Huge\bfseries\color{black} Minimum Vertex Cover}\\[0.8em]
+    {\Large\color{darkgray} Relazione del progetto di Algorithm Engineering}\\[1cm]
+    
+    \rule{0.75\linewidth}{1pt}\\[1cm]
+    
+    {\Large\bfseries Nadia Muzyka}\\[0.3em]
+    {\normalsize Matricola 302201}\\[3cm]
+    
+    \vfill
+    
+    {\large Università degli Studi dell'Aquila}\\[0.3em]
+    {\small A.A. 2025--2026}\\
 \end{titlepage}
+
+\newpage
+\tableofcontents
 
 % ─────────────────────────────────────────────────────────────────────
 \newpage
 
-\input{capitolo1}
-\input{capitolo2}
-\input{capitolo3}
-\input{capitolo4}
+\input{Capitoli/introduzione}
+\input{Capitoli/capitolo1}
 
 \end{document}

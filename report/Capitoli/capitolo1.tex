@@ -1,0 +1,95 @@
+\chapter{Cenni teorici}
+% ─────────────────────────────────────────────────────────────────────
+\section{Definizione del problema}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{definiz}[Minimum Vertex Cover]
+Dato un grafo non orientato $G = (V, E)$, un \textbf{vertex cover} è un sottoinsieme di nodi $V' \subseteq V$ tale che per ogni arco $(u, v) \in E$, si ha $u \in V'$ oppure $v \in V'$ (o entrambi). 
+Un \textbf{Minimum Vertex Cover} è un vertex cover di cardinalità minima.
+\end{definiz}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\linewidth]{mvcGraph.png}
+    \caption{Esempio di grafo con un Minimum Vertex Cover evidenziato.}
+    \label{fig:mio_grafo}
+\end{figure}
+
+Il problema del Minimum Vertex Cover è un classico problema NP-hard, il che significa che non esiste un algoritmo noto che possa risolverlo in tempo polinomiale per tutti i grafi in input (a meno che P = NP). 
+Tuttavia, esistono algoritmi approssimati e euristici che possono fornire soluzioni vicine al minimo in tempi ragionevoli per molti casi pratici.
+
+Nel seguito vengono presentati tre approcci algoritmici al problema: un algoritmo esatto basato su branch-and-bound, un algoritmo di approssimazione con garanzia fattore 2, e un'euristica greedy.
+
+\section{Algoritmi}
+
+\subsection{Exact Branch-and-Bound}
+
+\textbf{Idea:} L'algoritmo di branch-and-bound esplora un albero di ricerca in cui ogni nodo rappresenta una scelta di includere o escludere un vertice dal vertex cover.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\SetKwProg{Fn}{Algoritmo}{}{end}
+\SetKwComment{Comment}{// }{}
+
+\Fn{BranchAndBoundRecursive{($G, C, \textit{best}$):}}{
+    
+    \If{$C$ è un vertex cover valido}{
+        \If{$|C| < |\textit{best}|$}{
+            $\textit{best} \gets C$\;
+        }
+        \Return\;
+    }
+    
+    \If{$|C| + \text{lower\_bound}(G) \ge |\textit{best}|$}{
+        \Return \Comment*[r]{potatura}
+    }
+    
+    scegli un arco $(u, v)$ non coperto\;
+    \textit{BranchAndBoundRecursive}($G, C \cup \{u\}, \textit{best}$) \Comment*[r]{ramo sinistro}
+    \textit{BranchAndBoundRecursive}($G, C \cup \{v\}, \textit{best}$) \Comment*[r]{ramo destro}
+}
+\Fn{BranchAndBound{($graph G):$}}{
+    $\textit{best} \gets V$ \Comment*[r]{caso peggiore: tutti i vertici}
+  \textit{BranchAndBound}($G, \emptyset, \textit{best}$)\;
+   }
+\caption{Algoritmo Esatto Branch and Bound per Vertex Cover}
+\label{alg:branch_and_bound}
+\end{algorithm}
+
+\textbf{Correttezza: } l'algoritmo esplora tutte le possibili combinazioni di vertici e pota solo i rami che non possono portare a una soluzione migliore, garantendo che la soluzione ottimale venga trovata.
+
+\textbf{Tempo di esecuzione: } l'algoritmo ha una complessità esponenziale $O(2^n)$ nel caso peggiore, ma può essere molto più veloce in pratica grazie alla potatura dei rami non promettenti.
+
+\subsection{2-Approximation via Maximal Matching}
+
+\textbf{Idea:} L'algoritmo si basa sul concetto di \textit{matching} massimale. Un matching è un insieme di archi senza vertici in comune. Un matching massimale è un matching che non può essere esteso aggiungendo altri archi.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Algoritmo di Approssimazione per Vertex Cover}
+\label{alg:vertex_cover}
+
+$C \gets \emptyset$\;
+$E' \gets E$\;
+
+\While{$E' \neq \emptyset$}{
+    scegli un arco $(u, v) \in E'$ arbitrariamente\;
+    $C \gets C \cup \{u, v\}$\;
+    rimuovi da $E'$ tutti gli archi incidenti su $u$ o $v$\;
+}
+\Return{$C$}\;
+\end{algorithm}
+
+\textbf{Correttezza:} ogni arco del grafo ha almeno un estremo in C, quindi C è un vertex cover valido.
+
+\textbf{Tempo di esecuzione: }l'algoritmo ha una complessità di $O(|E|+|V|)$, dove $|V|$ è il numero di vertici e $|E|$ è il numero di archi del grafo. Questo perché ogni arco viene considerato al massimo una volta, e la rimozione degli archi incidenti può essere effettuata in tempo proporzionale al numero di archi.
+
+\begin{teorema}[2-Approximation via Maximal Matching]
+L'algoritmo basato su matching massimale (Maximal Matching) è un algoritmo di approssimazione $2$-approssimato per il problema del Minimum Vertex Cover.
+\end{teorema}
+
+\begin{proof}
+Sia $C^*$ un Minimum Vertex Cover ottimale e sia $M$ un matching massimale trovato dall'algoritmo. Poiché $M$ è un matching, ogni arco in $M$ richiede almeno un vertice in $C^*$ per essere coperto. Pertanto, $|C^*| \geq |M|$. D'altra parte, l'algoritmo seleziona entrambi i vertici di ogni arco in $M$, quindi $|C| = 2|M|$. Combinando queste disuguaglianze, otteniamo $|C| = 2|M| \leq 2|C^*|$, dimostrando che l'algoritmo è un algoritmo di approssimazione $2$-approssimato.
+\end{proof}
+
+\subsection{Greedy Heuristic}

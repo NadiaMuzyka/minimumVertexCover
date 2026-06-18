@@ -2,8 +2,6 @@
 using namespace std;
 
 // 2-approximation for Minimum Vertex Cover via maximal matching.
-// OPT >= |matching| (each matching edge needs at least one endpoint covered),
-// and we return exactly 2*|matching| vertices, so solution <= 2*OPT.
 vector<int> approxVertexCover(int n, const vector<pair<int,int>>& edges) {
     vector<bool> covered(n, false);
     vector<int> cover;
