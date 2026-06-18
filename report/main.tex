@@ -1,0 +1,136 @@
+\documentclass[12pt, a4paper]{report}
+
+% ── Encoding & language ──────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+
+
+% ── Layout ───────────────────────────────────────────────────────────
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=3cm]{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+
+% ── Math ─────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb, amsthm}
+
+% ── Graphics & colors ────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+
+% ── Tables ───────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{array}
+
+% ── Code listings ────────────────────────────────────────────────────
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\color{NavyBlue},
+  commentstyle=\itshape\color{Gray},
+  frame=single,
+  breaklines=true,
+  numbers=left,
+  numberstyle=\tiny\color{Gray},
+  xleftmargin=1.5em,
+  framexleftmargin=1.5em,
+}
+
+% ── Boxes ────────────────────────────────────────────────────────────
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+% definizione box
+\newtcolorbox{definizione}[1][]{
+  colback=blue!5!white, colframe=NavyBlue,
+  fonttitle=\bfseries, title=Definizione~#1,
+  breakable
+}
+\newtcolorbox{importante}{
+  colback=red!5!white, colframe=red!60!black,
+  fonttitle=\bfseries, title=Importante,
+  breakable
+}
+\newtcolorbox{esempio}{
+  colback=green!5!white, colframe=OliveGreen,
+  fonttitle=\bfseries, title=Esempio,
+  breakable
+}
+\newtcolorbox{nota}{
+  colback=yellow!10!white, colframe=Goldenrod,
+  fonttitle=\bfseries, title=Nota,
+  breakable
+}
+\newtcolorbox{takeaway}{
+  colback=purple!5!white, colframe=purple!60!black,
+  fonttitle=\bfseries, title=Takeaway,
+  breakable
+}
+
+% ── Headers & footers ────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{Big Data Processing}}
+\fancyhead[R]{\small\textit{Capitolo 1 -- MapReduce}}
+\fancyfoot[C]{\thepage}
+
+% ── Hyperlinks ───────────────────────────────────────────────────────
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=NavyBlue,
+  citecolor=NavyBlue,
+  pdftitle={Appunti Big Data -- Capitolo 1},
+  pdfauthor={Appunti personali}
+}
+
+% ── subsection formatting ───────────────────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\subsection}{\Large\bfseries\color{black}}{}{0em}{\thesubsection\quad}
+\titleformat{\subsubsection}{\large\bfseries\color{black}}{}{0em}{\thesubsubsection\quad}
+\titleformat{\paragraph}{\normalsize\bfseries\color{black}}{}{0em}{\theparagraph\quad}
+
+% Impostazioni per limitare l'indice al 3° livello lasciando il 4° nel testo
+\setcounter{secnumdepth}{4} % Mostra la numerazione nel testo (es. 1.1.1.1)
+\setcounter{tocdepth}{1}    % Mostra nell'indice solo fino alla subsection
+
+% ── Enumitem ─────────────────────────────────────────────────────────
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.5em, nosep}
+\setlist[enumerate]{leftmargin=1.5em, nosep}
+
+% ── Shortcuts ────────────────────────────────────────────────────────
+\newcommand{\kv}[2]{\langle #1;\, #2 \rangle}
+\newcommand{\kvl}[2]{\langle #1;\, #2 \rangle}
+\newcommand{\MAP}{\texttt{MAP}}
+\newcommand{\REDUCE}{\texttt{REDUCE}}
+\newcommand{\Lk}{L_k}
+
+% ─────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Titolo ───────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\Huge\bfseries\color{black} Appunti di Big Data Processing}\\[1em]
+  
+  \rule{\linewidth}{0.5pt}\\[1em]
+  {\large Basati sulle lezioni del Prof.~Mattia D'Emidio}\\
+  {\large Università degli Studi dell'Aquila}\\[0.5em]
+  {\large Marzo 2026}\\[3cm]
+  \tableofcontents
+\end{titlepage}
+
+% ─────────────────────────────────────────────────────────────────────
+\newpage
+
+\input{capitolo1}
+\input{capitolo2}
+\input{capitolo3}
+\input{capitolo4}
+
+\end{document}

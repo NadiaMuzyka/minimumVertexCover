@@ -1,0 +1,1106 @@
+\chapter{Model Map Reduce}
+% ─────────────────────────────────────────────────────────────────────
+\section{Motivazione e Contesto}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Ingredienti fondamentali dei sistemi Big Data}
+
+La maggior parte dei framework per l'elaborazione di Big Data si basa su
+\textbf{tre ingredienti principali}:
+
+\begin{enumerate}
+  \item \textbf{Infrastruttura di storage distribuito} -- I \emph{Distributed
+    File System} (DFS) garantiscono storage scalabile e fault-tolerant.
+  \item \textbf{Modello computazionale / di programmazione} -- MapReduce
+    come modello per esprimere computazioni data-parallel su larga scala,
+    progettato per girare su cluster, tipicamente su dati residenti nel DFS.
+  \item \textbf{Framework di esecuzione / orchestrazione} -- Responsabile
+    di scheduling, sincronizzazione, data movement (shuffle), fault tolerance
+    e monitoring.
+\end{enumerate}
+
+\begin{takeaway}
+  DFS + modello data-parallel (MapReduce) + runtime fanno sì che un datacenter
+  si comporti come una \emph{``singola macchina facile da usare''} per i Big Data.
+\end{takeaway}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Tecniche di decomposizione per il calcolo parallelo}
+
+MapReduce è un modello per descrivere come avviene il calcolo nei cluster.
+Lo usiamo per \textbf{progettare e analizzare algoritmi paralleli} con garanzie
+che funzionino bene in pratica.
+
+Il modello si ispira alle classiche tecniche di decomposizione che suddividono
+un problema in sottoproblemi risolvibili in parallelo.
+
+\begin{importante}
+  \textbf{Idea chiave:} più i sottoproblemi sono indipendenti, maggiore è
+  il potenziale speedup se elaborati in parallelo.
+\end{importante}
+
+\paragraph{Divide and Conquer}
+
+La strategia classica di decomposizione:
+\begin{itemize}
+  \item \textbf{Divide:} suddivide il lavoro in molti sottoproblemi.
+  \item \textbf{Conquer:} risolve i sottoproblemi su worker/unità computazionali
+    diverse.
+  \item \textbf{Combine:} unisce i risultati parziali nell'output finale.
+\end{itemize}
+
+\paragraph{Input-Data Decomposition}
+
+\begin{itemize}
+  \item Partizione dei \textbf{dati di input} tra i worker.
+  \item Ogni worker elabora la propria porzione locale \textbf{indipendentemente}.
+  \item Esempio: contare le parole in una collezione di documenti -- ogni
+    worker processa un sottoinsieme di documenti.
+  \item La \textbf{fase Map} di MapReduce è un esempio canonico di
+    input-data decomposition.
+\end{itemize}
+
+\paragraph{Output-Data Decomposition}
+
+\begin{itemize}
+  \item Partizione dello \textbf{spazio di output} tra i worker.
+  \item Ogni worker è responsabile della produzione di una porzione dell'output.
+  \item Esempio: calcolo di un istogramma -- ogni worker è responsabile di
+    un sottoinsieme di bin.
+  \item La \textbf{fase Reduce} di MapReduce usa output-data decomposition
+    (ogni reducer produce output per le chiavi assegnategli).
+\end{itemize}
+
+\paragraph{Owner-Computes-Rule Decomposition}
+
+\begin{itemize}
+  \item Il worker che \emph{possiede} un dato è responsabile del calcolo su di esso.
+  \item Minimizza il movimento di dati \textbf{co-localizzando} computazione e dati.
+  \item Esempio: operazioni matriciali in cui ogni worker possiede un blocco
+    della matrice.
+\end{itemize}
+
+\paragraph{Exploratory Decomposition}
+
+\begin{itemize}
+  \item Utile per problemi di ricerca in cui lo spazio delle soluzioni è esplorato
+    in parallelo.
+  \item Worker diversi esplorano rami diversi dell'albero di ricerca.
+  \item Esempio: branch-and-bound parallelo, ricerca su albero di gioco.
+\end{itemize}
+
+\paragraph{Speculative Decomposition}
+
+\begin{itemize}
+  \item Esegue più computazioni possibili in parallelo \emph{prima} di sapere
+    quale è necessaria.
+  \item Scarta i risultati che risultano inutili.
+  \item Esempio: \textbf{backup task} in MapReduce (esecuzione speculativa
+    dei task lenti).
+\end{itemize}
+
+\paragraph{MapReduce combina più strategie}
+
+\begin{tabular}{@{}ll@{}}
+  \toprule
+  \textbf{Elemento MapReduce} & \textbf{Strategia} \\
+  \midrule
+  Fase Map & Input-data decomposition \\
+  Fase Reduce & Output-data decomposition \\
+  Data locality & Owner-computes-rule \\
+  Backup task & Speculative decomposition \\
+  \bottomrule
+\end{tabular}
+
+\vspace{0.5em}
+\begin{importante}
+  La comunicazione di rete è spesso il collo di bottiglia: si mira a
+  \textbf{minimizzare il movimento dei dati} e sfruttare la \textbf{data locality}.
+\end{importante}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Efficacia della decomposizione}
+
+L'efficacia dipende da:
+\begin{itemize}
+  \item \textbf{Struttura del problema:} i sottoproblemi sono risolvibili
+    indipendentemente?
+  \item \textbf{Load balance:} i worker ricevono quantità simili di lavoro?
+  \item \textbf{Costo di comunicazione:} quanti dati devono essere trasmessi
+    sulla rete (shuffle)?
+  \item \textbf{Effetti di sistema:} fallimenti e \emph{stragglers} (task lenti
+    che ritardano il completamento).
+\end{itemize}
+
+In pratica riutilizziamo idee degli algoritmi paralleli classici, ma a scala
+dove comunicazione e I/O possono dominare sul calcolo puro.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Esempi di problemi a scala Web}
+
+\begin{itemize}
+  \item \textbf{Web page ranking (PageRank):} moltiplicazioni matrice-vettore
+    ripetute su matrici sparse enormi; ogni worker elabora un sottoinsieme
+    di righe/archi.
+  \item \textbf{Mining da social network:} calcolo di proprietà su grafi con
+    miliardi di nodi/archi; computazioni locali su sottografi + aggregazione
+    di statistiche globali.
+  \item \textbf{Rilevamento di plagi / near-duplicate:} l'approccio naive
+    confronta tutte le coppie di documenti (infeasible); metodi scalabili
+    generano coppie candidate e le verificano.
+  \item \textbf{Workload di training:} conteggio di frequenze, co-occorrenze
+    o gradienti su dataset enormi; risultati parziali locali + riduzioni globali
+    (somma, media, max, \ldots).
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Come i Massively Parallel Computational Models (MPCM) differiscono
+  dai modelli classici}
+
+Rispetto ai modelli paralleli classici, gli MPCM assumono tipicamente:
+\begin{itemize}
+  \item \textbf{Shared-nothing:} nessuna memoria condivisa tra i worker.
+  \item \textbf{Dati partizionati} (ed eventualmente replicati) tra le macchine.
+  \item \textbf{Controllo limitato} su placement dello storage e risorse
+    computazionali: gli algoritmi devono funzionare senza conoscere il
+    placement dei dati (\emph{agnostic} alla distribuzione) e senza conoscere
+    il numero di unità computazionali.
+\end{itemize}
+
+Queste assunzioni migliorano \textbf{portabilità} e \textbf{robustezza}:
+\begin{itemize}
+  \item Preferenza per esecuzione \emph{data-local}.
+  \item Lo stesso programma gira su cluster di dimensioni/topologie diverse.
+  \item Scheduling e fault tolerance gestiti dal sistema.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Perché MapReduce è importante}
+
+MapReduce (e i suoi discendenti) ha influenzato molti sistemi moderni:
+\begin{itemize}
+  \item Implementazioni interne di Google.
+  \item \textbf{Apache Hadoop} (MapReduce open-source + ecosistema).
+  \item Apache Hive e altri strumenti SQL-on-Hadoop.
+  \item Servizi cloud gestiti (Google Cloud Dataproc, AWS EMR, Azure HDInsight).
+  \item \textbf{Apache Spark} (va oltre MapReduce, ma ne eredita le idee chiave).
+\end{itemize}
+
+\begin{takeaway}
+  Il motivo chiave del successo: il modello è abbastanza semplice da supportare
+  astrazioni di alto livello e blocchi riutilizzabili, non solo codice distribuito
+  di basso livello.
+\end{takeaway}
+
+Il successo di MapReduce deriva dalla sua \textbf{semplicità e rigidità}:
+il modello computazionale è fisso, quindi relativamente facile da usare.
+La progettazione di algoritmi è semplificata quando le assunzioni di modellazione
+sono fisse e realistiche. Solo un piccolo insieme di componenti è personalizzabile;
+il programmatore prepara i dati e implementa le funzioni.
+
+% ─────────────────────────────────────────────────────────────────────
+\newpage
+\section{Il Modello MapReduce}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Principio ispiratore: spostare il calcolo verso i dati}
+
+\begin{importante}
+  \textbf{Motto:} trattare il datacenter come una singola macchina.
+  \begin{itemize}
+    \item I dati sono memorizzati in modo distribuito dove vengono prodotti.
+    \item Replicati per fault tolerance.
+    \item Quando è necessaria l'elaborazione, i task vengono schedulati
+      \textbf{vicino ai dati} (\emph{data locality}).
+  \end{itemize}
+  \textbf{Perché:} a scala, la larghezza di banda di rete è preziosa; è spesso
+  più veloce \emph{spostare il calcolo verso i dati} che spostare i dati verso
+  il calcolo.
+\end{importante}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Terminologia}
+
+\begin{tabular}{@{}lp{9cm}@{}}
+  \toprule
+  \textbf{Termine} & \textbf{Significato} \\
+  \midrule
+  Cluster & Infrastruttura fisica (macchine + rete). \\
+  MPCM    & Modello astratto per ragionare su computazione/comunicazione
+             in un cluster. \\
+  Worker  & Macchina (o processo worker) che esegue task e scambia dati. \\
+  Task    & Unità di lavoro schedulata (map task o reduce task). \\
+  Chunk / Input Split & Partizione dell'input assegnata a un singolo map task. \\
+  Mapper  & Risultato dell'applicazione della funzione map a un singolo
+             elemento di input. \\
+  Reducer & Risultato dell'applicazione della funzione reduce a una singola
+             chiave e ai suoi valori. \\
+  \bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Modello dei dati: coppie chiave-valore}
+
+\begin{definizione}[-- Coppia chiave-valore]
+  Tutta la rappresentazione, l'elaborazione e la memorizzazione in MapReduce
+  avviene tramite \textbf{coppie chiave-valore}, denotate:
+  \[
+    \kv{k}{v}
+  \]
+  dove $k$ è la chiave e $v$ è il valore. Chiavi e valori possono essere di
+  molti tipi: interi, stringhe, tuple, oggetti serializzati, \ldots
+\end{definizione}
+
+Questa astrazione è il fondamento per:
+\begin{itemize}
+  \item Partizionamento e raggruppamento (\emph{shuffle}).
+  \item Elaborazione parallela (molti task su molte coppie).
+  \item Interfaccia pulita tra codice utente (Map/Reduce) e runtime.
+\end{itemize}
+
+\textbf{Perché le chiavi sono importanti:}
+\begin{itemize}
+  \item Distribuire ed spostare dati nel cluster (hashing): le chiavi
+    determinano \emph{dove} i dati vengono memorizzati o trasmessi.
+  \item Schedulare i task sui nodi appropriati: le chiavi determinano
+    \emph{quale nodo} elabora quali dati.
+\end{itemize}
+
+\paragraph{Rappresentazione dei dati di input}
+
+Gli elementi di input elaborati sono coppie chiave-valore:
+\begin{itemize}
+  \item Un \textbf{elemento} può rappresentare molte cose: una tupla,
+    un documento, un record, \ldots
+  \item Un \textbf{chunk} (o input split) è una collezione di elementi
+    (tipicamente assegnata a un singolo map task).
+  \item Se i dati grezzi non sono naturalmente indicizzati, il sistema
+    (o l'utente) può assegnare una chiave tecnica (es.\ ID documento,
+    byte offset, numero di record).
+  \item Quando la chiave è irrilevante, la notazione è $\kv{*}{v}$.
+\end{itemize}
+
+\begin{importante}
+  \textbf{Vincolo del modello:} nessun elemento di input è condiviso tra due
+  chunk (macchine). Ogni elemento è elaborato da esattamente un map task;
+  la suddivisione dell'input in chunk è una \textbf{partizione} del dataset.
+\end{importante}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Le tre fasi di un round MapReduce}
+
+Una computazione MapReduce (``round'') consiste nelle seguenti fasi:
+
+\begin{enumerate}
+  \item \textbf{Lettura dell'input} (eventualmente grande):
+    ingestione nel DFS se non già distribuito.
+  \item \textbf{Fase Map:} converte ogni elemento di input in una o più
+    coppie chiave-valore intermedie $\kv{k'}{v'}$.
+    Output: un multiset distribuito di coppie $\kv{\mathit{key}}{\mathit{value}}$ intermedie.
+  \item \textbf{Fase Shuffle/Group-by-Key:} raggruppa le coppie intermedie
+    per chiave, spostando i dati sulla rete affinché tutti i valori con la
+    stessa chiave si trovino sulla stessa macchina.
+    Output: coppie $\kv{k}{\Lk}$ (chiave -- lista di valori).
+  \item \textbf{Fase Reduce:} applica la funzione reduce a ogni coppia
+    $\kv{k}{\Lk}$.
+    Output: zero o più coppie chiave-valore di output.
+  \item \textbf{Scrittura dell'output} (eventualmente grande):
+    memorizzazione nel DFS o in un sink esterno.
+\end{enumerate}
+
+\begin{nota}
+  I passi 1 e 5 sono spesso impliciti: i dati possono essere già nel DFS
+  e l'output rimanere distribuito. Questo è l'essenza del
+  \emph{``spostare il calcolo verso i dati''}.
+\end{nota}
+
+\begin{takeaway}
+  La computazione \textbf{alterna} tra lavoro parallelo locale
+  (computazione map/reduce) e comunicazione globale (shuffle).
+\end{takeaway}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Funzione Map: definizione formale}
+
+\begin{definizione}[-- Funzione Map]
+  \[
+    \forall\, \kv{k}{v} \in I \quad \MAP\!\bigl(\kv{k}{v}\bigr)
+      \;\to\; \kv{k'}{v'}^{*}
+  \]
+  \begin{itemize}
+    \item \textbf{Input:} coppie $\kv{k}{v} \in I$ (porzioni diverse di $I$
+      sono elaborate da map task diversi).
+    \item \textbf{Una chiamata per coppia:} output è una sequenza
+      (possibilmente vuota) di coppie intermedie $\kv{k'}{v'}$.
+    \item Le chiavi intermedie \textbf{non sono necessariamente univoche}:
+      molte coppie possono condividere la stessa chiave.
+  \end{itemize}
+\end{definizione}
+
+\begin{nota}
+  La rappresentazione $\kv{k}{\Lk}$ (raggruppata per chiave) è prodotta
+  \emph{dopo} dalla fase shuffle/group, non dalla funzione map stessa.
+\end{nota}
+
+La \textbf{Fase Map} è l'esecuzione dei map task su tutti gli input; termina
+quando l'ultimo map task termina. Output: unione di tutte le coppie intermedie
+prodotte da tutti i map task (distribuita tra i nodi).
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Funzione Reduce: definizione formale}
+
+\begin{definizione}[-- Funzione Reduce]
+  \[
+    \forall\, \kv{k}{\Lk} \in I' \quad
+    \REDUCE\!\bigl(\kv{k}{\Lk}\bigr) \;\to\; \kv{k''}{v''}^{*}
+  \]
+  Notazione alternativa:
+  \[
+    \forall\, \kv{k}{\langle v'\rangle^{*}} \in I' \quad
+    \REDUCE\!\bigl(\kv{k}{\langle v'\rangle^{*}}\bigr) \;\to\; \kv{k''}{v''}^{*}
+  \]
+  \begin{itemize}
+    \item \textbf{Input:} coppie raggruppate per chiave $\kv{k}{\Lk} \in I'$;
+      $\Lk$ contiene tutti i valori prodotti dalla fase map con chiave $k$.
+    \item \textbf{Una chiamata per chiave $k$:} tutti i valori in $\Lk$ sono
+      elaborati insieme.
+    \item \textbf{Output:} zero o più coppie chiave-valore
+      (non necessariamente con la stessa chiave).
+    \item La funzione può aggregare, filtrare, trasformare o combinare i valori.
+  \end{itemize}
+\end{definizione}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Fase Shuffle / Group-by-Key}
+
+Dopo la fase map, tutte le coppie intermedie emesse passano alla fase
+\textbf{shuffle/group-by-key}:
+\begin{itemize}
+  \item Tutte le coppie con la stessa chiave vengono \textbf{raggruppate}
+    in una lista di valori.
+  \item Formeranno l'input del reduce: una collezione di coppie
+    $\kv{k}{\Lk}$.
+  \item Molti runtime che implementano MapReduce \textbf{ordinano}
+    anche le chiavi all'interno di ogni partizione.
+\end{itemize}
+
+\textbf{Perché il raggruppamento:} tra map task diversi (su nodi diversi)
+molte coppie intermedie possono condividere la stessa chiave. Per la maggior
+parte dei problemi, dobbiamo riunire tutti i valori che condividono una chiave
+per calcolare un risultato globale.
+
+\textbf{Come le chiavi vengono assegnate ai reduce task:}
+\begin{itemize}
+  \item Definito da una \emph{politica di partizionamento} (es.\ hashing
+    sulla chiave), gestita dal runtime.
+  \item Ogni reduce task elabora una chiave alla volta, ma può gestirne
+    molte complessivamente.
+  \item \textbf{Invariante chiave:} tutti i valori con la stessa chiave
+    vengono inviati allo stesso reduce task.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Definizione rigorosa del job MapReduce}
+
+\textbf{Input:} un multiset (o collezione) di coppie chiave-valore $I$.
+
+\textbf{Scelte del progettista:}
+\begin{enumerate}
+  \item Definire le due funzioni utente: $\MAP$ e $\REDUCE$.
+  \item Specificare i formati e i tipi di dati di input/output.
+  \item Definire opzionalmente una politica di partizionamento personalizzata.
+\end{enumerate}
+
+\textbf{Responsabilità del runtime:}
+\begin{itemize}
+  \item Distribuire l'input tra i map task.
+  \item Eseguire le funzioni map in parallelo.
+  \item Fare shuffle e raggruppare i dati intermedi per chiave.
+  \item Eseguire le funzioni reduce in parallelo.
+  \item Gestire fallimenti e stragglers.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Sincronizzazione in MapReduce}
+
+Un job MapReduce richiede punti di sincronizzazione nel cluster:
+\begin{itemize}
+  \item Elaborazione locale delle partizioni di input (map task).
+  \item Ridistribuzione e raggruppamento dei dati intermedi per chiave (shuffle).
+  \item Aggregazione per produrre gli output finali (reduce task).
+\end{itemize}
+
+Questo richiede coordinazione: le fasi avvengono in un ordine ben definito
+(map $\to$ shuffle $\to$ reduce) e i dati intermedi devono essere spostati
+e raggruppati.
+
+Nel modello MapReduce \textbf{astraiamo via} i meccanismi: progettiamo il
+modello dei dati $\kv{k}{v}$ e le due funzioni ($\MAP$/$\REDUCE$); il
+runtime garantisce la corretta esecuzione sotto le assunzioni del modello.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Come pensare in MapReduce}
+
+\textbf{Per risolvere un problema in MapReduce} seguiamo due passi di progetto:
+
+\begin{enumerate}
+  \item \textbf{Modellare i dati:}
+    \begin{itemize}
+      \item Rappresentare input e output come coppie chiave-valore.
+      \item Scegliere le chiavi in modo che guidino il partizionamento e il
+        raggruppamento (shuffle).
+      \item Ogni dato riceve una chiave che guida storage, computazione
+        e movimento.
+    \end{itemize}
+  \item \textbf{Progettare due funzioni:}
+    \begin{itemize}
+      \item \textbf{Map:} elabora gli elementi di input indipendentemente
+        ed emette coppie chiave-valore intermedie.
+      \item \textbf{Reduce:} aggrega ed elabora i valori che condividono
+        la stessa chiave.
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Divisione delle responsabilità:}
+\begin{itemize}
+  \item Il \textbf{programmatore} specifica: funzioni Map e Reduce; file di
+    input / sorgenti dati.
+  \item Il \textbf{sistema} gestisce: lettura degli input come coppie
+    chiave-valore; shuffle e sort verso i nodi di output; routing di tutte
+    le coppie con una data chiave allo stesso reducer; scrittura dei risultati
+    su file.
+\end{itemize}
+
+\begin{takeaway}
+  Il programmatore si concentra su \emph{cosa} calcolare; il sistema gestisce
+  \emph{come} distribuire e coordinare.
+\end{takeaway}
+
+% ─────────────────────────────────────────────────────────────────────
+\newpage
+\section{WordCount: Esempio Illustrativo}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Definizione del problema}
+
+\begin{esempio}
+  \textbf{Scenario:} l'input è una enorme collezione di documenti testuali;
+  vogliamo contare le occorrenze delle parole.
+
+  \textbf{Definizione formale:}
+  \begin{itemize}
+    \item \textbf{Input:} una collezione di documenti (ogni documento è una
+      sequenza di parole/stringhe).
+    \item \textbf{Output:} per ogni parola $w$, il numero totale di occorrenze
+      di $w$ nell'intera collezione.
+  \end{itemize}
+
+  \textbf{Applicazione tipica:} analytics e machine learning su larga scala.
+\end{esempio}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Passo 1: Modellazione dei dati}
+
+\begin{itemize}
+  \item \textbf{Input:} una collezione $D$ di documenti.
+    \begin{itemize}
+      \item Ogni documento è un \emph{elemento}.
+      \item Un chunk è un insieme di elementi assegnato a un map task.
+      \item Le chiavi di input possono essere ID documento; per WordCount
+        non sono essenziali.
+      \item Il valore è il contenuto del documento.
+    \end{itemize}
+  \item \textbf{Output:} per ogni parola, il totale delle occorrenze.
+    \begin{itemize}
+      \item Chiavi: parole (tipo \texttt{String}).
+      \item Valori: conteggi di occorrenze (tipo \texttt{Integer}).
+    \end{itemize}
+  \item \textbf{Dati intermedi:} coppie della forma $\kv{w}{1}$.
+    \begin{itemize}
+      \item Emesse dalla funzione map per ogni occorrenza di parola.
+      \item Raggruppate per chiave durante lo shuffle.
+    \end{itemize}
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Passo 2: Definizione della funzione Map}
+
+La funzione map elabora un elemento di input (un documento) e produce
+coppie chiave-valore intermedie.
+
+\textbf{Algoritmo:}
+\begin{enumerate}
+  \item Legge un documento.
+  \item Lo tokenizza in parole $w_1, w_2, \ldots, w_n$.
+  \item Per ogni parola $w_i$, \emph{emette} la coppia $\kv{w_i}{1}$.
+\end{enumerate}
+
+\textbf{Significato:}
+\begin{itemize}
+  \item Chiave = la parola $w_i$.
+  \item Valore = 1, ovvero ``un'occorrenza osservata''.
+\end{itemize}
+
+\textbf{Risultato dell'elaborazione di un chunk:} emissione di una
+collezione di coppie
+\[
+  \kv{w_1}{1},\; \kv{w_2}{1},\; \ldots,\; \kv{w_n}{1}
+\]
+una coppia per ogni parola in ogni documento.
+
+\begin{nota}
+  Se la parola $m$ appare $k$ volte in un documento $D_i$, avremo $k$
+  coppie $\kv{m}{1}$ nell'output emesso. I dati intermedi sono memorizzati
+  localmente nel nodo worker, poi trasmessi durante lo shuffle.
+\end{nota}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Passo 3: Definizione della funzione Reduce}
+
+\textbf{Input del reduce:} coppie raggruppate $\kv{k}{[l_1, l_2, \ldots, l_n]}$
+\begin{itemize}
+  \item Per WordCount, ogni $l_i = 1$ (un'occorrenza).
+  \item $n$ è il numero totale di volte in cui la parola $k$ è apparsa
+    in tutti i documenti.
+\end{itemize}
+
+\textbf{Algoritmo:}
+\begin{enumerate}
+  \item Calcola $\texttt{COUNT}(k) = \sum_{i=1}^{n} l_i = n$.
+  \item Emette (output) la coppia $\kv{k}{\texttt{COUNT}(k)}$.
+\end{enumerate}
+
+\textbf{Output finale:} ogni reducer emette coppie $\kv{\mathit{word}}{\mathit{count}}$
+per le parole che ha elaborato. L'unione di tutti gli output dei reducer fornisce
+il conteggio completo delle parole per l'intera corpus.
+
+\begin{nota}
+  Produrre un singolo file richiede un passo aggiuntivo (es.\ una fusione
+  successiva o un job con un solo reducer).
+\end{nota}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Pseudocodice MapReduce}
+
+Il pseudocodice di un algoritmo MapReduce deve contenere:
+\begin{itemize}
+  \item \textbf{Input per map:} un elemento del chunk assegnato.
+  \item \textbf{Input di reduce:} una coppia chiave-lista di valori,
+    risultato del raggruppamento di tutti i valori-chiave generati dai map.
+  \item \textbf{Corpo delle procedure:} definizione della computazione
+    e degli output (tramite \texttt{emit}).
+  \item \textbf{Extra (opzionale):} piccole variabili condivise/parametri,
+    codice di inizializzazione o chiusura.
+\end{itemize}
+
+\begin{lstlisting}[language=Python, caption={WordCount -- Mapper}]
+class Mapper:
+    """Il mapper emette una coppia chiave-valore intermedia
+       per ogni parola in un documento."""
+    def Map(self, docid_a, doc_d):
+        for term_t in doc_d:
+            Emit(t, 1)
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={WordCount -- Reducer}]
+class Reducer:
+    """Il reducer somma tutti i conteggi per ogni termine."""
+    def Reduce(self, term_t, list_of_counts_Lt):
+        total = 0
+        for c in list_of_counts_Lt:
+            total += c
+        Emit(t, total)
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────
+\newpage
+\section{Principi di Progettazione}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Pro e contro di un modello rigido}
+
+\textbf{Pro del modello rigido:} molte problematiche vengono gestite dal
+sistema per design (partizionamento di default, sincronizzazione, ridondanza,
+\ldots); semplicità, efficacia, affidabilità, facilità d'uso.
+
+\textbf{Contro:} controllo diretto limitato su:
+\begin{itemize}
+  \item \emph{Dove} gira un mapper/reducer.
+  \item \emph{Quando} un task inizia/finisce.
+  \item \emph{Quali} coppie di input vengono elaborate da quale mapper.
+  \item \emph{Quali} coppie intermedie vanno a quale reducer (solo:
+    tutti i valori per una chiave vanno a un reducer).
+\end{itemize}
+
+\begin{importante}
+  Le prestazioni sono controllabili solo \textbf{indirettamente} tramite
+  i punti di personalizzazione consentiti.
+\end{importante}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Fattori che influenzano le soluzioni MR}
+
+L'efficacia e la correttezza delle soluzioni MR dipendono fortemente da:
+\begin{itemize}
+  \item \textbf{Tipo di problema:} è effettivamente parallelizzabile?
+  \item \textbf{Qualità del design dell'algoritmo:} sfrutta efficacemente
+    il parallelismo e supera un forte baseline sequenziale?
+  \item \textbf{Il sistema sottostante:} hardware, rete e vincoli di storage;
+    trade-off costo/prestazioni.
+\end{itemize}
+
+\begin{importante}
+  \textbf{Requisito di correttezza:} gli algoritmi devono essere corretti
+  indipendentemente da come i record di input sono divisi tra i mapper,
+  e tutti i valori per la stessa chiave devono essere elaborati insieme
+  da un reducer.
+\end{importante}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Effetti di sistema sui cluster}
+
+A differenza degli algoritmi sequenziali tradizionali, sui cluster:
+\begin{itemize}
+  \item Il tempo speso nella \textbf{comunicazione} tra nodi è
+    non-trascurabile e deve essere modellato.
+  \item \textbf{Trasmettere dati} spesso costa molto di più che elaborare
+    la stessa quantità di dati localmente.
+  \item Le risorse eterogenee delle macchine (es.\ memoria per nodo)
+    devono essere considerate per evitare casi patologici.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Manopole di tuning in MapReduce}
+
+\begin{tabular}{@{}lp{8.5cm}@{}}
+  \toprule
+  \textbf{Manopola} & \textbf{Descrizione} \\
+  \midrule
+  Parallelismo    & Regolare il numero di task e/o il numero di macchine. \\
+  Shuffling       & Personalizzare il partizionamento e come i dati intermedi
+                    sono distribuiti. \\
+  Sincronizzazione & Decidere se tutti i task di una fase devono finire prima
+                    che la successiva possa iniziare. \\
+  Ridondanza      & Eseguire copie di backup dei task per tollerare
+                    i fallimenti e mitigare gli stragglers. \\
+  \bottomrule
+\end{tabular}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Tecniche di personalizzazione}
+
+Cosa può fare un programmatore/progettista di algoritmi per ottimizzare MR
+senza rompere il modello:
+\begin{itemize}
+  \item \textbf{Usare chiavi/valori strutturati} (non solo tipi primitivi):
+    cambia come i dati sono distribuiti ed elaborati.
+  \item \textbf{Codice di inizializzazione/terminazione} nei task map/reduce:
+    abilita stato condiviso locale al task tra chiamate di funzione.
+  \item \textbf{Preservare variabili di stato} nei mapper/reducer tra
+    input/chiavi: abilita riuso locale al nodo (attenzione: correttezza +
+    determinismo).
+  \item \textbf{Controllare l'ordinamento delle chiavi intermedie:}
+    può aiutare la correttezza o le prestazioni in problemi specifici.
+  \item \textbf{Personalizzare il partizionamento dello spazio delle chiavi:}
+    controlla quale reducer vede quali chiavi (invariante: una chiave
+    $\to$ un reducer).
+  \item \textbf{Parametri ambientali:} es.\ numero di reducer, molteplicità
+    dei task, ridondanza.
+\end{itemize}
+
+Quando una tecnica si applica a molte problematiche nella stessa categoria,
+la chiamiamo \textbf{design pattern}.
+
+% ─────────────────────────────────────────────────────────────────────
+\newpage
+\section{Framework di Esecuzione}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Cosa gestisce il sistema}
+
+\begin{tabular}{@{}ll@{}}
+  \toprule
+  \textbf{Sistema (gestisce automaticamente)} & \textbf{Progettista (si concentra su)} \\
+  \midrule
+  Distribuzione e movimento dei dati (shuffle) & Modellazione dati (chiavi/valori) \\
+  Scheduling e sincronizzazione dei task       & Logica algoritmica (Map/Reduce) \\
+  Fault tolerance (ri-esecuzione su fallimenti) & Trade-off prestazionali \\
+  Storage e replicazione su DFS                &  \\
+  \bottomrule
+\end{tabular}
+
+Come progettisti ignoriamo: eterogeneità hardware, topologia di rete,
+sistemi operativi e altri dettagli di basso livello.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Flusso computazionale (control plane)}
+
+\begin{enumerate}
+  \item Il programma utente avvia un \textbf{master controller}.
+  \item Il programma utente avvia un insieme di processi \textbf{worker}.
+\end{enumerate}
+
+\begin{itemize}
+  \item \textbf{Master:} coordina globalmente.
+  \item \textbf{Worker:} esegue map task o reduce task.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Movimento dei dati}
+
+\begin{enumerate}
+  \item L'input risiede in un DFS (partizionato in split/blocchi).
+  \item Lo scheduler piazza i task \textbf{vicino ai dati} (data locality).
+  \item Gli output dei map sono memorizzati sui \textbf{dischi locali}
+    dei worker.
+  \item Durante lo shuffle, gli output dei map vengono trasferiti ai
+    reducer in base al partitioner.
+  \item L'output finale viene scritto di nuovo nel DFS (o in un sink esterno).
+\end{enumerate}
+
+\begin{nota}
+  L'output di un job MR può diventare l'input di un altro
+  (algoritmi multi-round).
+\end{nota}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Responsabilità del Master Controller}
+
+\begin{enumerate}
+  \item \textbf{Avvio} dei map e reduce task.
+  \item \textbf{Assegnazione} dei task ai worker.
+  \item \textbf{Tracciamento} dello stato dei task, dei worker/nodi, del
+    movimento dei dati (posizioni degli output intermedi, informazioni
+    di partizionamento).
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Responsabilità dei Worker}
+
+\begin{enumerate}
+  \item Esecuzione dei task map/reduce (la computazione effettiva).
+  \item Segnalazione del completamento del task al master.
+  \item Produzione degli output intermedi/finali.
+  \item Creazione di file locali quando necessario.
+  \item Comunicazione al master della posizione e dimensione dei file prodotti.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Algoritmo di scheduling dei task}
+
+Ogni sistema MR include un algoritmo di scheduling per:
+\begin{itemize}
+  \item Assegnare i task ai worker in modo efficace.
+  \item Gestire l'interazione worker-master.
+\end{itemize}
+
+\textbf{Stato di ogni task:}
+\begin{itemize}
+  \item \textbf{Idle:} in attesa di essere schedulato.
+  \item \textbf{In-progress:} attualmente in esecuzione.
+  \item \textbf{Completed:} segnala al master la posizione e la dimensione
+    dei suoi file di output (gli output dei map sono tipicamente su dischi
+    locali; gli output dei reduce sono scritti nel DFS).
+\end{itemize}
+
+Il master fa ping periodicamente ai worker per monitorare lo stato,
+schedulare nuovi task e rilevare fallimenti.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Gestione dei fallimenti}
+
+\textbf{In caso di fallimento del worker:}
+\begin{itemize}
+  \item I map task (completati o in-progress) sul worker fallito vengono
+    resettati a idle e rischedulati, poiché anche gli output dei map
+    completati diventano non disponibili se memorizzati localmente.
+  \item I reduce task in-progress sul worker fallito vengono resettati
+    a idle e rischedulati.
+\end{itemize}
+
+\textbf{Fallimento del Master:} l'intero job MR viene abortito e riavviato.
+
+\begin{tabular}{@{}lll@{}}
+  \toprule
+  \textbf{Tipo di fallimento} & \textbf{Impatto} & \textbf{Soluzione} \\
+  \midrule
+  Master   & Worst case & Riavvio dell'intero job \\
+  Map task & Solitamente minore & Riassegnazione e riavvio su altro worker \\
+  Reduce task & Solitamente minore & Riassegnazione e riavvio \\
+  \bottomrule
+\end{tabular}
+
+\textbf{Perché non mantenere lo stato parzialmente elaborato?}
+\begin{itemize}
+  \item Tracciare i progressi parziali aggiunge complessità implementativa
+    significativa.
+  \item Il checkpointing può introdurre overhead di CPU, memoria e I/O.
+  \item Riavviare è spesso più economico e semplice del recovery fine-grained.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Granularità dei task}
+
+Avere \textbf{più di un map task per nodo} è conveniente:
+\begin{itemize}
+  \item Se il Worker 1 completa due map task prima che il Worker 2
+    completi un singolo task pesante (\emph{straggler}), i reduce task
+    non possono iniziare finché tutti gli output map richiesti non sono
+    disponibili.
+  \item Avere molti task permette di bilanciare meglio il carico.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Backup task (esecuzione speculativa)}
+
+\begin{definizione}[-- Backup Task]
+  I backup task sono un metodo euristico e proattivo per ottenere output
+  più velocemente:
+  \begin{itemize}
+    \item Si avviano copie ridondanti dei task a esecuzione lenta
+      (per mitigare gli \emph{stragglers}).
+    \item Una volta che la prima copia completa, le copie rimanenti
+      vengono terminate.
+  \end{itemize}
+\end{definizione}
+
+\textbf{Perché funziona:} i task possono bloccarsi a causa di dischi difettosi,
+rallentamenti CPU transitori, rumore del sistema operativo, ecc. Si scambia
+risorse computazionali extra per una latenza di coda (\emph{job completion time})
+più bassa.
+
+% ─────────────────────────────────────────────────────────────────────
+\newpage
+\section{Partizionamento e Meccanismi di Sistema}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Vista end-to-end: MapReduce su DFS}
+
+\begin{itemize}
+  \item \textbf{Input:} i dati vengono ingestiti nel DFS (il passo
+    \texttt{copyFromLocal} è opzionale).
+  \item \textbf{Fase Map:} task paralleli leggono gli input split
+    (preferibilmente data-local) e generano coppie $\kv{k}{v}$ intermedie.
+  \item \textbf{Fase Shuffle/Group:} le coppie intermedie vengono ridistribuite
+    affinché i valori con la stessa chiave si incontrino.
+  \item \textbf{Fase Reduce:} task paralleli elaborano i valori per chiave
+    e producono coppie chiave-valore di output.
+  \item \textbf{Output:} scritto di nuovo nel DFS; copiato fuori
+    (\texttt{copyToLocal}) solo se necessario.
+\end{itemize}
+
+\begin{takeaway}
+  Il DFS fornisce storage scalabile; MapReduce fornisce un modo strutturato
+  per eseguire computazioni sui dati distribuiti.
+\end{takeaway}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Partizionamento: panoramica}
+
+\begin{importante}
+  \textbf{Vincolo del modello:} una chiamata alla funzione reduce elabora
+  esattamente una coppia raggruppata $\kv{k}{\Lk}$. Tutti i valori con la
+  stessa chiave $k$ sono raccolti in $\Lk$.
+\end{importante}
+
+Tipicamente il numero di reduce task $r$ è configurabile dall'utente.
+
+\textbf{Domanda sull'assegnazione delle chiavi:} come decidiamo quale reduce task
+gestisce quali chiavi?
+\begin{itemize}
+  \item Se $r \geq$ numero di chiavi distinte: si potrebbe assegnare una
+    chiave per reduce task (raramente fattibile).
+  \item Altrimenti: le chiavi \textbf{devono essere partizionate} tra i
+    reduce task.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Partizionamento tramite hashing}
+
+Una politica di partizionamento comune usa una funzione hash sulle chiavi:
+\[
+  h: U \to \{0, 1, \ldots, r-1\}
+\]
+dove $U$ è l'universo delle chiavi possibili e $r$ è il numero di reduce task
+(tipicamente $r \ll |U|$). La chiave $k$ è assegnata al reduce task n.~$h(k)$.
+
+\begin{itemize}
+  \item $h(k)$ è detto \textbf{numero di bucket} o \textbf{partizione}
+    della chiave $k$.
+  \item Tutte le chiavi con lo stesso numero di bucket vanno allo stesso
+    reduce task.
+\end{itemize}
+
+\textbf{Proprietà di buone funzioni hash:}
+\begin{itemize}
+  \item \textbf{Deterministica:} la stessa chiave va sempre nello stesso bucket.
+  \item \textbf{Uniforme:} le chiavi sono distribuite equamente tra i bucket
+    (idealmente).
+  \item \textbf{Veloce:} overhead computazionale minimo.
+\end{itemize}
+
+\textbf{Come i dati intermedi raggiungono i reduce task:}
+\begin{enumerate}
+  \item Ogni map task produce coppie intermedie e le scrive localmente.
+  \item L'output del map è partizionato in $r$ partizioni usando $h(k)$.
+  \item La partizione $i$ contiene coppie le cui chiavi soddisfano $h(k) = i$.
+  \item La partizione $i$ verrà inviata al reduce task $i$.
+  \item Molti runtime \textbf{ordinano} i dati per chiave all'interno di ogni
+    partizione.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Il problema dello skew}
+
+\begin{esempio}
+  Supponiamo $r = 4$ reduce task e chiavi intere in $[0, 2^{10}-1]$.
+  Usando $h(k) = k \bmod 4$, ogni chiave è assegnata deterministicamente
+  a un reduce task. Nel caso peggiore (tutte le $2^{10}$ chiavi presenti),
+  ogni reducer può ricevere fino a $2^{10}/4 = 2^8 = 256$ chiavi distinte.
+
+  \textbf{Caso patologico:} se tutte le chiavi sono multiple di 4, con
+  $h(k) = k \bmod 4$ tutte vanno al reducer 0 $\Rightarrow$ un reducer
+  fa (quasi) tutto il lavoro $\Rightarrow$ \textbf{parallelismo sprecato}.
+\end{esempio}
+
+\begin{definizione}[-- Skew]
+  Lo \textbf{skew} si riferisce a uno squilibrio significativo tra i reduce task:
+  \begin{itemize}
+    \item Reducer diversi impiegano tempi diversi.
+    \item Il tempo di completamento globale del job è spesso determinato
+      dal \textbf{reducer più lento}.
+  \end{itemize}
+  Può derivare da:
+  \begin{itemize}
+    \item Una mappatura sbilanciata di chiavi su reducer (partizionamento sbagliato).
+    \item Dimensioni delle liste di valori $|\Lk|$ molto diseguali
+      (\emph{hot key}).
+  \end{itemize}
+\end{definizione}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Scelta della strategia di partizionamento}
+
+\begin{itemize}
+  \item Dipende dalla \textbf{distribuzione delle chiavi} nei dati.
+  \item La maggior parte dei sistemi fornisce partitioner di default che
+    funzionano bene per tipi di chiave comuni.
+  \item Opzionalmente, l'utente può fornire un \textbf{partitioner
+    personalizzato}.
+\end{itemize}
+
+\textbf{Trade-off nella scelta del numero di reduce task $r$:}
+\begin{itemize}
+  \item $r$ maggiore $\Rightarrow$ più parallelismo ma più overhead.
+  \item $r$ minore $\Rightarrow$ meno overhead ma potenzialmente meno
+    parallelismo.
+  \item Usare più reduce task dei nodi può aiutare a mitigare lo skew:
+    i reducer a lungo termine occupano alcuni nodi; i reducer più brevi
+    possono girare su altri nodi, migliorando l'utilizzo.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\newpage
+\section{Esempio di Implementazione: Apache Hadoop}
+% ─────────────────────────────────────────────────────────────────────
+
+\subsection{Architettura classica di Hadoop}
+
+A livello implementativo, la coordinazione è effettuata da un
+\textbf{master service} che:
+\begin{itemize}
+  \item Schedula i task e monitora i progressi.
+  \item Riavvia i task falliti.
+  \item Coordina i trasferimenti dati durante lo shuffle.
+\end{itemize}
+
+Un sistema MapReduce funzionante è quindi uno \textbf{stack complesso di
+componenti} che interagiscono.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Componenti principali dell'architettura Hadoop classica}
+
+\begin{itemize}
+  \item \textbf{Client Program:} invia un job (programma + configurazione)
+    al sistema.
+  \item \textbf{JobTracker} (master): coordina l'esecuzione.
+    \begin{itemize}
+      \item Divide l'input in input split.
+      \item Assegna map task e reduce task ai worker.
+      \item Monitora l'esecuzione e gestisce i fallimenti.
+    \end{itemize}
+  \item \textbf{TaskTracker} (worker daemon): ogni nodo worker esegue un
+    TaskTracker.
+    \begin{itemize}
+      \item Esegue map task su split (preferibilmente locali).
+      \item In seguito esegue reduce task sui dati intermedi raggruppati.
+    \end{itemize}
+  \item \textbf{Distributed File System (DFS):} memorizza input e output.
+\end{itemize}
+
+\begin{importante}
+  Questo è un \textbf{esempio di implementazione} (una possibile architettura
+  runtime). In questo corso, il modello MapReduce è trattato come
+  un'astrazione che nasconde questi componenti di sistema.
+\end{importante}
+
+% ─────────────────────────────────────────────────────────────────────
+\newpage
+\section{Riepilogo del Capitolo}
+% ─────────────────────────────────────────────────────────────────────
+
+\begin{tabular}{@{}lp{9cm}@{}}
+  \toprule
+  \textbf{Argomento} & \textbf{Concetti chiave} \\
+  \midrule
+  Motivazione &
+    Decomposizione (divide\&conquer, input/output, owner-computes, speculativa);
+    MPCM; shared-nothing. \\[4pt]
+  Modello dati &
+    Coppie $\kv{k}{v}$; chunk / input split; elementi. \\[4pt]
+  Funzione Map &
+    $\MAP(\kv{k}{v}) \to \kv{k'}{v'}^*$; una chiamata per elemento;
+    output intermedi scritti localmente. \\[4pt]
+  Shuffle / Group &
+    Raggruppa per chiave $\to \kv{k}{\Lk}$; gestito dal sistema;
+    invariante: stessa chiave $\to$ stesso reducer. \\[4pt]
+  Funzione Reduce &
+    $\REDUCE(\kv{k}{\Lk}) \to \kv{k''}{v''}^*$; una chiamata per chiave;
+    può aggregare/filtrare/trasformare. \\[4pt]
+  WordCount &
+    Map emette $\kv{w}{1}$; Reduce somma i conteggi. \\[4pt]
+  Design principles &
+    Manopole di tuning; tecniche di personalizzazione; design pattern. \\[4pt]
+  Execution framework &
+    Master/worker; scheduling; stati dei task; fault tolerance;
+    backup task. \\[4pt]
+  Partizionamento &
+    Hash $h(k) \in \{0,\ldots,r-1\}$; skew; hot key; trade-off su $r$. \\[4pt]
+  Hadoop &
+    JobTracker (master), TaskTracker (worker), DFS; solo un esempio
+    implementativo. \\
+  \bottomrule
+\end{tabular}
+
+\vspace{1em}
+\begin{importante}
+  \textbf{Prossimi argomenti:}
+  \begin{itemize}
+    \item Metriche di performance: $R$, $M_L$, $M_A$, $M_C$.
+    \item Combiner e aggregazione locale.
+    \item Classi di complessità MR: $\mathcal{MRC}^i$.
+    \item Pratica: PySpark, Spark UI.
+  \end{itemize}
+\end{importante}
+
+% ─────────────────────────────────────────────────────────────────────
+\section*{Riferimenti}
+% ─────────────────────────────────────────────────────────────────────
+\begin{itemize}
+  \item Jeffrey Dean e Sanjay Ghemawat,
+    \textit{MapReduce: Simplified Data Processing on Large Clusters}.
+    \url{http://labs.google.com/papers/mapreduce.html}
+  \item Sanjay Ghemawat, Howard Gobioff e Shun-Tak Leung,
+    \textit{The Google File System}.
+    \url{http://labs.google.com/papers/gfs.html}
+\end{itemize}
