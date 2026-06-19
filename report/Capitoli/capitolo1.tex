@@ -22,45 +22,7 @@ Nel seguito vengono presentati tre approcci algoritmici al problema: un algoritm
 
 \section{Algoritmi}
 
-\subsection{Exact Branch-and-Bound}
-
-\textbf{Idea:} L'algoritmo di branch-and-bound esplora un albero di ricerca in cui ogni nodo rappresenta una scelta di includere o escludere un vertice dal vertex cover.
-
-\begin{algorithm}[H]
-\DontPrintSemicolon
-\SetKwProg{Fn}{Algoritmo}{}{end}
-\SetKwComment{Comment}{// }{}
-
-\Fn{BranchAndBoundRecursive{($G, C, \textit{best}$):}}{
-    
-    \If{$C$ è un vertex cover valido}{
-        \If{$|C| < |\textit{best}|$}{
-            $\textit{best} \gets C$\;
-        }
-        \Return\;
-    }
-    
-    \If{$|C| + \text{lower\_bound}(G) \ge |\textit{best}|$}{
-        \Return \Comment*[r]{potatura}
-    }
-    
-    scegli un arco $(u, v)$ non coperto\;
-    \textit{BranchAndBoundRecursive}($G, C \cup \{u\}, \textit{best}$) \Comment*[r]{ramo sinistro}
-    \textit{BranchAndBoundRecursive}($G, C \cup \{v\}, \textit{best}$) \Comment*[r]{ramo destro}
-}
-\Fn{BranchAndBound{($graph G):$}}{
-    $\textit{best} \gets V$ \Comment*[r]{caso peggiore: tutti i vertici}
-  \textit{BranchAndBound}($G, \emptyset, \textit{best}$)\;
-   }
-\caption{Algoritmo Esatto Branch and Bound per Vertex Cover}
-\label{alg:branch_and_bound}
-\end{algorithm}
-
-\textbf{Correttezza: } l'algoritmo esplora tutte le possibili combinazioni di vertici e pota solo i rami che non possono portare a una soluzione migliore, garantendo che la soluzione ottimale venga trovata.
-
-\textbf{Tempo di esecuzione: } l'algoritmo ha una complessità esponenziale $O(2^n)$ nel caso peggiore, ma può essere molto più veloce in pratica grazie alla potatura dei rami non promettenti.
-
-\subsection{2-Approximation via Maximal Matching}
+\subsection{2-Approximation via Maximal Matching} \label{aprox}
 
 \textbf{Idea:} L'algoritmo si basa sul concetto di \textit{matching} massimale. Un matching è un insieme di archi senza vertici in comune. Un matching massimale è un matching che non può essere esteso aggiungendo altri archi.
 
@@ -84,7 +46,8 @@ $E' \gets E$\;
 
 \textbf{Tempo di esecuzione: }l'algoritmo ha una complessità di $O(|E|+|V|)$, dove $|V|$ è il numero di vertici e $|E|$ è il numero di archi del grafo. Questo perché ogni arco viene considerato al massimo una volta, e la rimozione degli archi incidenti può essere effettuata in tempo proporzionale al numero di archi.
 
-\begin{teorema}[2-Approximation via Maximal Matching]
+\begin{teorema}[2-Approximation via Maximal Matching] \label{aprxteorem}
+  \leavevmode 
 L'algoritmo basato su matching massimale (Maximal Matching) è un algoritmo di approssimazione $2$-approssimato per il problema del Minimum Vertex Cover.
 \end{teorema}
 
@@ -92,4 +55,81 @@ L'algoritmo basato su matching massimale (Maximal Matching) è un algoritmo di a
 Sia $C^*$ un Minimum Vertex Cover ottimale e sia $M$ un matching massimale trovato dall'algoritmo. Poiché $M$ è un matching, ogni arco in $M$ richiede almeno un vertice in $C^*$ per essere coperto. Pertanto, $|C^*| \geq |M|$. D'altra parte, l'algoritmo seleziona entrambi i vertici di ogni arco in $M$, quindi $|C| = 2|M|$. Combinando queste disuguaglianze, otteniamo $|C| = 2|M| \leq 2|C^*|$, dimostrando che l'algoritmo è un algoritmo di approssimazione $2$-approssimato.
 \end{proof}
 
-\subsection{Greedy Heuristic}
+
+\subsection{Exact Branch-and-Bound}
+\subsubsection{Forza Bruta}
+L'approccio più semplice per risolvere il Minimum Vertex Cover in modo esatto è la forza bruta: enumerare tutti i possibili sottoinsiemi di vertici e restituire il più piccolo che copre tutti gli archi.
+
+Infatti, dato un grafo con $n$ vertici, ci sono $2^n$ possibili sottoinsiemi di vertici. Per ogni sottoinsieme, dobbiamo verificare se copre tutti gli archi del grafo. Questo porta a una complessità temporale di $O(2^n \cdot |E|)$, che è impraticabile per grafi di dimensioni anche moderate.
+
+Perciò, spesso si ricorre a tecniche più sofisticate che evitano di esplorare tutte le combinazioni, come il branch-and-bound.
+
+\subsubsection{Branch-and-Bound}
+
+L'idea del branch-and-bound è molto semplice: lo spazio delle soluzioni viene esplorato in modo intelligente, evitando di esaminare soluzioni che non possono essere migliori di quelle già trovate.
+
+Il branch-and bound si basa su tre concetti chiave:
+\begin{itemize}
+    \item \textbf{Branching:} il problema originale viene suddiviso ricorsivamente in sottoproblemi più piccoli, costruendo un albero di ricerca. Ogni nodo dell'albero rappresenta una scelta parziale, e i suoi figli rappresentano le possibili estensioni di quella scelta. Ad esempio, si può scegliere un vertice e decidere se includerlo o escluderlo dal vertex cover.
+    \item \textbf{Bounding:} calcola un limite inferiore (o superiore) sulla qualità della soluzione che può essere ottenuta da un sottoproblema. Se questo limite è peggiore della soluzione migliore trovata finora, il sottoproblema viene scartato.
+    \item \textbf{Pruning:} elimina rami dell'albero di ricerca che non possono portare a una soluzione migliore di quella già trovata.
+\end{itemize}
+ La correttezza dell'algoritmo è garantita dal fatto che, esplorando tutte le possibili combinazioni di vertici e scartando solo quelle che non possono migliorare la soluzione corrente, alla fine si troverà la soluzione ottimale.
+
+ Nel caso peggiore, quando la potatura non elimina alcun ramo, questo approccio degenera nel brute force con complessità esponenziale. Nella pratica tuttavia, grazie alla potatura, lo spazio esplorato è spesso una frazione molto piccola dell'albero completo.
+
+ \subsubsection{Pseudocodice branch-and-bound per il MVC}
+
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\SetKwProg{Fn}{Procedura}{}{end}
+\SetKwComment{Comment}{// }{}
+
+\Fn{\textsc{Inizializzazione}$(G)$}{
+    $\textit{best} \gets V$\;
+    $C \gets \emptyset$\;
+    $\textsc{BranchAndBound}(G, C, \textit{best})$\;
+}
+
+\Fn{\textsc{BranchAndBound}$(G_{\text{residuo}}, C, \textit{best})$}{
+    \If{$|C| + \textsc{LowerBound}(G_{\text{residuo}}) \geq |\textit{best}|$}{
+        \Return \Comment*[r]{potatura}
+    }
+    \If{$G_{\text{residuo}} = \emptyset$}{
+        $\textit{best} \gets C$ \Comment*[r]{cover valido e migliore}
+        \Return\;
+    }
+    Scegli un arco $(u, v)$ da $G_{\text{residuo}}$\;
+    $\textsc{BranchAndBound}(G_{\text{residuo}} \setminus N(u),\ C \cup \{u\},\ \textit{best})$\;
+    $\textsc{BranchAndBound}(G_{\text{residuo}} \setminus N(v),\ C \cup \{v\},\ \textit{best})$\ \\ \Comment*[r]{N(v): archi incidenti su v}
+}
+
+
+\caption{Branch and Bound per Minimum Vertex Cover}
+\label{alg:branch_and_bound}
+\end{algorithm}
+
+\textbf{Correttezza: } Per ogni arco $(u, v)$, l'algoritmo esplora entrambe le possibilità: includere $u$ o includere $v$ nel vertex cover. La potatura garantisce che non vengano esplorate soluzioni che non possono essere migliori di quella corrente. Alla fine, l'algoritmo restituisce il vertex cover minimo trovato.
+
+\textbf{Tempo di esecuzione: } L'albero di ricerca è binario e ha altezza al più n. Nel caso peggiore, quando la potatura non elimina alcun ramo, il numero di nodi è $O(2^n)$. La complessità totale è quindi: $O(2^n \cdot |E|)$.
+
+Nella pratica, grazie alla potatura, il tempo di esecuzione è significativamente inferiore rispetto al brute force.
+
+\subsubsection{Lower bound}
+Per rendere efficace la potatura, è fondamentale calcolare un buon limite inferiore. 
+Questo, deve rappresentare una stima per difetto del numero minimo di vertici necessari per coprire gli archi residui. 
+Sicuramente, come secondo requisito, bisogna che il calcolo di tale sia svolto in tempo polinomiale, altrimenti si rischia di annullare i benefici della potatura.
+
+Un'idea semplice è quella di utilizzare l'algoritmo di approssimazione basato su matching massimale presentato nella Sezione \ref{aprox}. 
+
+Dalla dimostrazione del Teorema \ref{aprxteorem} sappiamo che $|C^*| \geq |M|$, dove $|M|$ è la dimensione del matching massimale e $C^*$ è il Minimum Vertex Cover ottimale. Pertanto $|M|$ rappresenta un lower bound valido per il numero minimo di vertici necessari a coprire gli archi residui.
+
+Inoltre, come presentato nella Sezione \ref{aprox}, l'algoritmo ha complessità $O(|E|+|V|)$.
+
+\textbf{Impatto sul tempo di esecuzione totale: } Il calcolo del lower bound costa $O(|E_{residuo}|) \leq O(|E|)$ per ogni nodo dell'albero. Poiché il Branch and Bound ha già complessità $O(2^n \cdot |E|)$ nel caso peggiore, il costo aggiuntivo del lower bound non cambia l'ordine di grandezza della complessità totale. Nella pratica tuttavia, grazie alla potatura che esso consente, il numero di nodi effettivamente esplorati si riduce drasticamente rispetto al caso peggiore.
+
+Le due proprietà precedenti rendono il matching massimale una scelta 
+ideale per il calcolo del lower bound nel Branch and Bound: fornisce 
+una stima per difetto garantita e il suo calcolo non compromette 
+l'efficienza dell'algoritmo.

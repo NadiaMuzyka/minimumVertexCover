@@ -3,6 +3,9 @@
 \contentsline {chapter}{\numberline {1}Cenni teorici}{3}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Definizione del problema}{3}{section.1.1}%
 \contentsline {section}{\numberline {1.2}Algoritmi}{3}{section.1.2}%
-\contentsline {subsection}{\numberline {1.2.1}Exact Branch-and-Bound}{3}{subsection.1.2.1}%
-\contentsline {subsection}{\numberline {1.2.2}2-Approximation via Maximal Matching}{4}{subsection.1.2.2}%
-\contentsline {subsection}{\numberline {1.2.3}Greedy Heuristic}{5}{subsection.1.2.3}%
+\contentsline {subsection}{\numberline {1.2.1}2-Approximation via Maximal Matching}{3}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Exact Branch-and-Bound}{4}{subsection.1.2.2}%
+\contentsline {subsubsection}{\numberline {1.2.2.1}Forza Bruta}{4}{subsubsection.1.2.2.1}%
+\contentsline {subsubsection}{\numberline {1.2.2.2}Branch-and-Bound}{4}{subsubsection.1.2.2.2}%
+\contentsline {subsubsection}{\numberline {1.2.2.3}Pseudocodice branch-and-bound per il MVC}{5}{subsubsection.1.2.2.3}%
+\contentsline {subsubsection}{\numberline {1.2.2.4}Lower bound}{6}{subsubsection.1.2.2.4}%

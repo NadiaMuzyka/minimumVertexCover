@@ -103,7 +103,7 @@
 
 % Impostazioni per limitare l'indice al 3° livello lasciando il 4° nel testo
 \setcounter{secnumdepth}{4} % Mostra la numerazione nel testo (es. 1.1.1.1)
-\setcounter{tocdepth}{2}    % Mostra nell'indice solo fino alla subsection
+\setcounter{tocdepth}{3}    % Mostra nell'indice solo fino alla subsection
 
 % ── Enumitem ─────────────────────────────────────────────────────────
 \usepackage{enumitem}
@@ -122,6 +122,7 @@
 \usepackage{amssymb} % Per il simbolo del vuoto \emptyset
 \usepackage{amsthm} % Il pacchetto fondamentale per teoremi e dimostrazioni
 \newtheorem{teorema}{Teorema}[section] % Teoremi numerati per sezione
+\newtheorem{lemma}[teorema]{Lemma} % Nota [teorema]: eredita lo stesso contatore
 % ─────────────────────────────────────────────────────────────────────
 \begin{document}
 
