@@ -9,3 +9,5 @@
 \contentsline {subsubsection}{\numberline {1.2.2.2}Branch-and-Bound}{4}{subsubsection.1.2.2.2}%
 \contentsline {subsubsection}{\numberline {1.2.2.3}Pseudocodice branch-and-bound per il MVC}{5}{subsubsection.1.2.2.3}%
 \contentsline {subsubsection}{\numberline {1.2.2.4}Lower bound}{6}{subsubsection.1.2.2.4}%
+\contentsline {section}{\numberline {1.3}Greedy Heuristic}{6}{section.1.3}%
+\contentsline {chapter}{\numberline {2}Ambiente di test}{8}{chapter.2}%

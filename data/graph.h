@@ -4,12 +4,13 @@
 #include <vector>
 #include <string>
 
-// Definiamo il tipo Graph una volta sola per tutto il progetto
+// Definiamo il tipo Graph una volta sola per tutto il progetto.
+// Rappresentazione a lista di adiacenza: G[u] contiene i vicini di u.
 typedef std::vector<std::vector<int>> Graph;
 
 // --- Funzioni di Utilità (staranno in utils.cpp) ---
 
 // --- Algoritmi (staranno nei rispettivi .cpp) ---
-int approximation(const Graph& G);
+std::vector<int> approxVertexCover(const Graph& G);
 
 #endif

@@ -119,7 +119,7 @@ Nella pratica, grazie alla potatura, il tempo di esecuzione è significativament
 \subsubsection{Lower bound}
 Per rendere efficace la potatura, è fondamentale calcolare un buon limite inferiore. 
 Questo, deve rappresentare una stima per difetto del numero minimo di vertici necessari per coprire gli archi residui. 
-Sicuramente, come secondo requisito, bisogna che il calcolo di tale sia svolto in tempo polinomiale, altrimenti si rischia di annullare i benefici della potatura.
+Inoltre, è necessario che il calcolo di tale sia svolto in tempo polinomiale, in caso contrario si rischia di annullare i benefici della potatura.
 
 Un'idea semplice è quella di utilizzare l'algoritmo di approssimazione basato su matching massimale presentato nella Sezione \ref{aprox}. 
 
@@ -133,3 +133,34 @@ Le due proprietà precedenti rendono il matching massimale una scelta
 ideale per il calcolo del lower bound nel Branch and Bound: fornisce 
 una stima per difetto garantita e il suo calcolo non compromette 
 l'efficienza dell'algoritmo.
+
+Un primo obiettivo di questa tesina è di confrontare le prestazioni del branch and bound con l'allgoritmo esatto di forza bruta, al fine di valutare l'impatto della potatura sul tempo di esecuzione reale.
+
+\section{Greedy Heuristic}
+
+\textbf{L'idea:} Questo algoritmo si basa sulla strategia greedy, che consiste nel fare scelte locali ottimali con la speranza di ottenere una soluzione globale ottimale. In questo caso, l'algoritmo seleziona iterativamente il vertice con il grado più alto (cioè il vertice con il maggior numero di archi incidenti) e lo aggiunge al vertex cover. Dopo aver aggiunto un vertice, tutti gli archi incidenti su di esso vengono rimossi dal grafo residuo. Questo processo continua fino a quando non ci sono più archi da coprire.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\SetKwProg{Fn}{Procedura}{}{end}
+\caption{Algoritmo Greedy per Vertex Cover}
+\label{alg:greedy_vertex_cover}
+
+\Fn{\textsc{GreedyVertexCover}$(G)$}{
+    $C \gets \emptyset$\;
+    $G' \gets$ copia di $G$\;
+    \While{$E(G') \neq \emptyset$}{
+        $u \gets \arg\max_{v \in V(G')} \deg(v)$\;
+        $C \gets C \cup \{u\}$\;
+        rimuovi $u$ e tutti gli archi incidenti a $u$ da $G'$\;
+    }
+    \Return $C$\;
+}
+
+\end{algorithm}
+
+\textbf{Tempo di esecuzione:} L'algoritmo ha una complessità di $O(|V|^2+|E|)$, poiché in ogni iterazione dobbiamo trovare il vertice con il grado massimo, e questo può richiedere $O(|V|)$ tempo. In totale, l'algoritmo può eseguire fino a $|V|$ iterazioni nel caso peggiore. Quando un vertice viene rimosso, viene fatta una scansione della lista di adiacenza per rimuovere gli archi incidenti, il che richiede $O(|E|)$.
+
+\textbf{Correttezza:} L'algoritmo garantisce che ogni arco del grafo abbia almeno un estremo nel vertex cover risultante, quindi $C$ è un vertex cover valido. Tuttavia, non garantisce che $C$ sia il Minimum Vertex Cover, poiché la strategia greedy può portare a soluzioni subottimali.
+
+A differenza dell'algoritmo di approssimazione basato su matching massimale, l'euristica greedy non fornisce una garanzia di approssimazione. In pratica, può produrre soluzioni molto vicine al minimo in alcuni casi, ma può anche produrre soluzioni significativamente più grandi in altri. Perciò, questa tesina ha come obiettivo confrontare le prestazioni reali dell'algoritmo greedy con quelle dell'algoritmo di approssimazione basato su matching massimale, al fine di valutare quale approccio sia più efficace in scenari pratici.
