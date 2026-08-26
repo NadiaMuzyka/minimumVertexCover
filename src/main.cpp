@@ -2,51 +2,26 @@
 using namespace std;
 #include "../data/graph.h"
 
-vector<int> approxVertexCover(const Graph& G);
+// Uso: ./mvc [path_grafo] [algoritmo: approx|greedy|bb]
+int main(int argc, char* argv[]) {
+    const string path = (argc > 1) ? argv[1] : "data/test.txt";
+    const string algo = (argc > 2) ? argv[2] : "approx";
 
-int main() {
-    const string path = "../data/test.txt";
+    ParsedGraph pg = readGraphFromFile(path);
+    const Graph& G = pg.G;
+    const vector<int>& idx2id = pg.idx2id;
 
-    ifstream fin(path);
-    if (!fin) {
-        cerr << "Cannot open file: " << path << "\n";
+    cout << "Nodes: " << G.size() << "  Edges: " << pg.numEdges << "\n";
+
+    vector<int> cover;
+    auto t0 = chrono::steady_clock::now();
+    if (algo == "approx") cover = approxVertexCover(G);
+    else if (algo == "greedy") cover = greedyVertexCover(G);
+    else if (algo == "bb") cover = exactVertexCover(G);
+    else {
+        cerr << "Algoritmo sconosciuto: " << algo << " (usa approx|greedy|bb)\n";
         return 1;
     }
-
-    // Remap arbitrary node IDs to 0..n-1
-    unordered_map<int,int> id2idx;
-    vector<int> idx2id;
-    vector<pair<int,int>> edges;
-    string line;
-
-    auto getIdx = [&](int raw) -> int {
-        auto [it, inserted] = id2idx.emplace(raw, (int)id2idx.size());
-        if (inserted) idx2id.push_back(raw);
-        return it->second;
-    };
-
-    while (getline(fin, line)) {
-        if (line.empty() || line[0] == '#') continue;
-        istringstream ss(line);
-        int u, v;
-        if (!(ss >> u >> v)) continue;
-        int a = getIdx(u), b = getIdx(v);
-        if (a != b)
-            edges.emplace_back(a, b);
-    }
-
-    int n = (int)id2idx.size();
-
-    Graph G(n);
-    for (auto [a, b] : edges) {
-        G[a].push_back(b);
-        G[b].push_back(a);
-    }
-
-    cout << "Nodes: " << n << "  Edges: " << edges.size() << "\n";
-
-    auto t0 = chrono::steady_clock::now();
-    vector<int> cover = approxVertexCover(G);
     auto t1 = chrono::steady_clock::now();
     double ms = chrono::duration<double, milli>(t1 - t0).count();
 
@@ -56,7 +31,7 @@ int main() {
     cout << "Cardinalita': " << cover.size() << "\n";
     cout << "Tempo: " << fixed << setprecision(3) << ms << " ms\n";
 
-    ofstream fout("../results/approx_cover.txt");
+    ofstream fout("results/" + algo + "_cover.txt");
     fout << cover.size() << "\n";
     for (size_t i = 0; i < cover.size(); ++i)
         fout << idx2id[cover[i]] << (i + 1 < cover.size() ? ' ' : '\n');

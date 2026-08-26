@@ -1,0 +1,27 @@
+N_Nodi,Topologia,Algoritmo,Cardinalita,CPU_Time_sec,Status
+100,Erdos-Renyi (deg=6),Approx,90,0.000011,OK
+100,Erdos-Renyi (deg=6),Greedy,61,0.000039,OK
+200,Erdos-Renyi (deg=6),Approx,178,0.000022,OK
+200,Erdos-Renyi (deg=6),Greedy,132,0.000151,OK
+400,Erdos-Renyi (deg=6),Approx,350,0.000034,OK
+400,Erdos-Renyi (deg=6),Greedy,246,0.000493,OK
+800,Erdos-Renyi (deg=6),Approx,698,0.000086,OK
+800,Erdos-Renyi (deg=6),Greedy,503,0.001907,OK
+1600,Erdos-Renyi (deg=6),Approx,1408,0.000165,OK
+1600,Erdos-Renyi (deg=6),Greedy,1011,0.007573,OK
+3200,Erdos-Renyi (deg=6),Approx,2828,0.000279,OK
+3200,Erdos-Renyi (deg=6),Greedy,2024,0.028789,OK
+6400,Erdos-Renyi (deg=6),Approx,5682,0.000527,OK
+6400,Erdos-Renyi (deg=6),Greedy,4041,0.117800,OK
+12800,Erdos-Renyi (deg=6),Approx,11320,0.001149,OK
+12800,Erdos-Renyi (deg=6),Greedy,8081,0.659453,OK
+8,Erdos-Renyi (deg=6),BB,6,0.000013,OK
+10,Erdos-Renyi (deg=6),BB,7,0.000013,OK
+12,Erdos-Renyi (deg=6),BB,8,0.000017,OK
+14,Erdos-Renyi (deg=6),BB,10,0.000069,OK
+16,Erdos-Renyi (deg=6),BB,10,0.000061,OK
+18,Erdos-Renyi (deg=6),BB,12,0.000111,OK
+20,Erdos-Renyi (deg=6),BB,14,0.000608,OK
+22,Erdos-Renyi (deg=6),BB,15,0.001346,OK
+24,Erdos-Renyi (deg=6),BB,15,0.003281,OK
+26,Erdos-Renyi (deg=6),BB,18,0.004405,OK

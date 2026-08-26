@@ -1,2 +1,85 @@
 \chapter{Ambiente di test}
+\section{Implementazione degli algoritmi}
 
+Questa sezione descrive come i quattro approcci presentati nel Capitolo 1 sono stati effettivamente implementati: la 2-approssimazione, l'euristica greedy e il branch-and-bound in C++, e la formulazione a programmazione lineare intera risolta con Gurobi in Python. Prima di entrare nel dettaglio di ciascun algoritmo, descriviamo la struttura dati condivisa su cui operano.
+
+\subsection{Struttura dati}
+
+Il grafo è rappresentato tramite \textbf{lista di adiacenza}, 
+la scelta naturale per i grafi sparsi tipici di questa sperimentazione: 
+una matrice di adiacenza costerebbe $O(|V|^2)$ in memoria indipendentemente 
+dal numero di archi, mentre la lista di adiacenza costa $O(|V|+|E|)$.
+
+\begin{lstlisting}[language=C++, caption={Rappresentazione del grafo, condivisa da tutti gli algoritmi (\texttt{data/graph.h})}]
+typedef std::vector<std::vector<int>> Graph;
+// Graph[u] contiene la lista dei vicini di u
+\end{lstlisting}
+
+I dataset reali usano identificatori di nodo arbitrari e non contigui. 
+Per poter indicizzare direttamente i vettori con interi $0,\dots,n-1$, 
+il parsing (\texttt{data/utils.cpp}, funzione \texttt{readGraphFromFile}) 
+rimappa ogni id originale a un indice progressivo tramite una \texttt{unordered\_map}, 
+mantenendo il vettore inverso \texttt{idx2id} per poter ritradurre il risultato quando 
+lo si stampa o lo si scrive su file.
+
+Questa stessa struttura dati e questa stessa funzione di parsing sono condivise da 
+tutti i programmi del progetto, il che garantisce che ogni algoritmo veda esattamente 
+la stessa rappresentazione del grafo in input.
+
+\subsection{2-Approximation via Maximal Matching}
+
+Implementata in \texttt{src/approx.cpp}, seguendo direttamente lo pseudocodice dell'Algoritmo~\ref{alg:vertex_cover} (Sezione~\ref{aprox}). 
+L'unica differenza tra pseudocodice e implementazione riguarda come viene gestito l'insieme $E'$ degli archi ancora da coprire: rimuovere fisicamente gli archi da \texttt{Graph} ad ogni passo costerebbe tempo proporzionale al grado dei nodi coinvolti. Si evita il costo tenendo invece un vettore booleano \texttt{covered}, e considerando "ancora presente in $E'$" un arco $(u,v)$ se e solo se nessuno dei due estremi è già stato marcato:
+
+\begin{lstlisting}[language=C++, caption={Nucleo dell'algoritmo di approssimazione (\texttt{src/approx.cpp})}]
+if (!covered[u] && !covered[v]) {
+    covered[u] = true;
+    covered[v] = true;
+    cover.push_back(u);
+    cover.push_back(v);
+}
+\end{lstlisting}
+
+Ogni arco $(u,v)$ compare in \texttt{Graph} sia come vicino di $u$ sia come vicino di $v$; per non considerarlo due volte durante la scansione, viene esaminato solo quando $v > u$. Il costo resta $O(|V|+|E|)$ come discusso nella dimostrazione teorica.
+
+\subsection{Greedy Heuristic}
+
+Implementata in \texttt{src/greedy.cpp}. Anche qui si evita la rimozione fisica degli archi, sostituendola con un vettore \texttt{removed} e un vettore di gradi \texttt{deg} mantenuto incrementalmente: quando un vertice $u$ viene aggiunto al cover, il grado dei suoi vicini ancora presenti viene decrementato di uno invece di essere ricalcolato da zero, ed è decrementato anche un contatore globale \texttt{remainingEdges} usato come condizione di terminazione del ciclo principale.
+
+La selezione del vertice di grado massimo ad ogni iterazione è una scansione lineare su tutti i vertici non ancora rimossi, il che porta alla complessità $O(|V|^2+|E|)$ discussa nel Capitolo 1: fino a $|V|$ iterazioni, ciascuna con una ricerca $O(|V|)$ del massimo.
+
+\subsection{Exact Branch-and-Bound}
+
+Implementata in \texttt{src/exact\_branch\_and\_bound.cpp}, seguendo lo pseudocodice dell'Algoritmo~\ref{alg:branch_and_bound}. Rispetto allo pseudocodice teorico, l'implementazione introduce alcune scelte pratiche degne di nota.
+
+\paragraph{Grafo residuo senza copie.} Il grafo residuo $G_{\text{residuo}}$ dello pseudocodice non viene mai materializzato come un nuovo \texttt{Graph}: copiare l'intera lista di adiacenza ad ogni nodo dell'albero di ricerca sarebbe proibitivo, dato che l'albero può avere fino a $O(2^n)$ nodi. Si usa invece un unico vettore \texttt{removed} condiviso tra tutte le chiamate ricorsive, marcato all'entrata in un ramo e ripristinato (\emph{backtracking}) all'uscita:
+
+\begin{lstlisting}[language=C++, caption={Branching con backtracking (\texttt{src/exact\_branch\_and\_bound.cpp})}]
+removed[u] = true;
+current.push_back(u);
+branchAndBound(G, removed, current, best, ...);
+current.pop_back();
+removed[u] = false;   // backtrack: u torna disponibile per l'altro ramo
+\end{lstlisting}
+
+\paragraph{Lower bound.} La funzione \texttt{lowerBoundMatching} calcola un matching massimale sul grafo residuo esattamente come fa \texttt{approxVertexCover}, ma restituisce la cardinalità $|M|$ del matching stesso, \emph{non} $2|M|$. È un punto delicato: il Teorema~\ref{aprxteorem} garantisce $|M| \le |C^*|$, quindi $|M|$ è un lower bound valido per il numero di vertici ancora necessari; usare $2|M|$ (la dimensione del cover 2-approssimato) sovrastimerebbe il costo residuo e causerebbe una potatura scorretta, capace di scartare rami che contengono la soluzione ottima.
+
+\paragraph{Upper bound iniziale.} Lo pseudocodice teorico inizializza $\textit{best} \gets V$ (l'intero insieme dei vertici). In pratica si inizializza \texttt{best} con il risultato di \texttt{greedyVertexCover(G)}: un upper bound iniziale molto più stretto rende la condizione di potatura efficace fin dalla radice dell'albero, riducendo drasticamente i nodi esplorati rispetto a partire da un upper bound banale.
+
+\paragraph{Timeout di sicurezza.} Poiché nel caso peggiore l'algoritmo è esponenziale, la funzione strumentata \texttt{exact\-Vertex\-Cover\-Stats} accetta un limite di tempo (default 30 secondi): superato il limite, la ricorsione si interrompe e viene restituita la migliore soluzione trovata fino a quel momento, marcata come non necessariamente ottima. La stessa funzione restituisce anche il numero di nodi dell'albero di ricerca effettivamente esplorati, usato nel Capitolo~3 per quantificare l'effetto della potatura rispetto al limite teorico $O(2^n)$.
+
+\subsection{Formulazione ILP e risoluzione con Gurobi}
+
+Il quarto approccio esatto formula il Minimum Vertex Cover come un problema di \textbf{programmazione lineare intera binaria}: una variabile $x_v \in \{0,1\}$ per ogni vertice ($x_v=1$ se $v$ appartiene al cover), un vincolo $x_u + x_v \ge 1$ per ogni arco $(u,v)$ (garantisce che ogni arco sia coperto), e obiettivo $\min \sum_v x_v$.
+
+A differenza degli altri tre algoritmi, questa parte non è scritta in C++ ma in Python (\texttt{scripts/exact\_ilp.py}), usando il binding \texttt{gurobipy} per costruire il modello e delegarne la risoluzione al risolutore commerciale Gurobi:
+
+\begin{lstlisting}[language=Python, caption={Formulazione ILP del Minimum Vertex Cover (\texttt{scripts/exact\_ilp.py})}]
+x = model.addVars(G.nodes(), vtype=GRB.BINARY, name="x")
+for u, v in G.edges():
+    model.addConstr(x[u] + x[v] >= 1)
+model.setObjective(gp.quicksum(x[v] for v in G.nodes()), GRB.MINIMIZE)
+model.optimize()
+\end{lstlisting}
+
+La scelta di tenere questa parte separata dal codice C++, invece di linkare la libreria C++ di Gurobi nello stesso eseguibile del branch-and-bound, semplifica sia la formulazione del modello (l'API Python di Gurobi è più concisa) sia il confronto sperimentale tra i due metodi esatti, che restano due programmi indipendenti eseguiti sullo stesso grafo di input e confrontati a posteriori sui rispettivi output (si veda il Capitolo~3 per il dettaglio del meccanismo di comunicazione tra i due).
