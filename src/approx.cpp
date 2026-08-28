@@ -4,8 +4,8 @@ using namespace std;
 
 // 2-approximation for Minimum Vertex Cover via maximal matching. O(|V|+|E|).
 vector<int> approxVertexCover(const Graph& G) {
-    int n = (int)G.size();
-    vector<bool> covered(n, false);
+    int n = (int)G.size(); //n = |V|
+    vector<bool> covered(n, false); //vettore di booleani che indica se un vertice è coperto o meno
     vector<int> cover; // C ← ∅
     //E' è rappresentato implicitamente tramite un array covered, evitando il costo di rimozione fisica degli archi
     for (int u = 0; u < n; u++) {

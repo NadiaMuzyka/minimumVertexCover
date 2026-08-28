@@ -2,11 +2,31 @@
 \babel@toc {italian}{}\relax 
 \contentsline {chapter}{\numberline {1}Cenni teorici}{3}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Definizione del problema}{3}{section.1.1}%
-\contentsline {section}{\numberline {1.2}Algoritmi}{3}{section.1.2}%
-\contentsline {subsection}{\numberline {1.2.1}2-Approximation via Maximal Matching}{3}{subsection.1.2.1}%
-\contentsline {subsection}{\numberline {1.2.2}Exact Branch-and-Bound}{4}{subsection.1.2.2}%
-\contentsline {subsubsection}{\numberline {1.2.2.1}Forza Bruta}{4}{subsubsection.1.2.2.1}%
-\contentsline {subsubsection}{\numberline {1.2.2.2}Branch-and-Bound}{4}{subsubsection.1.2.2.2}%
-\contentsline {subsubsection}{\numberline {1.2.2.3}Pseudocodice branch-and-bound per il MVC}{5}{subsubsection.1.2.2.3}%
-\contentsline {subsubsection}{\numberline {1.2.2.4}Lower bound}{6}{subsubsection.1.2.2.4}%
-\contentsline {section}{\numberline {1.3}Greedy Heuristic}{6}{section.1.3}%
+\contentsline {section}{\numberline {1.2}Algoritmi approssimazione e euristiche}{3}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}2-Approximation via Maximal Matching}{4}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Greedy Heuristic}{4}{subsection.1.2.2}%
+\contentsline {section}{\numberline {1.3}Algoritmi esatti}{5}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Forza Bruta}{5}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Exact Branch-and-Bound}{6}{subsection.1.3.2}%
+\contentsline {subsubsection}{\numberline {1.3.2.1}Pseudocodice branch-and-bound per il MVC}{6}{subsubsection.1.3.2.1}%
+\contentsline {subsubsection}{\numberline {1.3.2.2}Lower bound}{7}{subsubsection.1.3.2.2}%
+\contentsline {subsection}{\numberline {1.3.3}Programmazione Lineare Intera (ILP)}{7}{subsection.1.3.3}%
+\contentsline {chapter}{\numberline {2}Ambiente di test}{9}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Struttura dati}{9}{section.2.1}%
+\contentsline {section}{\numberline {2.2}2-Approximation via Maximal Matching}{9}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Greedy Heuristic}{10}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Brute Force}{11}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Exact Branch-and-Bound}{11}{section.2.5}%
+\contentsline {subsection}{\numberline {2.5.1}Grafo residuo senza copie, backtracking su due vettori}{12}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.2}Selezione dell'arco}{12}{subsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.5.3}Lower bound}{13}{subsection.2.5.3}%
+\contentsline {subsection}{\numberline {2.5.4}Correttezza della potatura}{13}{subsection.2.5.4}%
+\contentsline {subsection}{\numberline {2.5.5}Completezza del branching}{13}{subsection.2.5.5}%
+\contentsline {subsection}{\numberline {2.5.6}Upper bound iniziale}{13}{subsection.2.5.6}%
+\contentsline {subsection}{\numberline {2.5.7}Timeout di sicurezza}{13}{subsection.2.5.7}%
+\contentsline {subsection}{\numberline {2.5.8}Costo per nodo e complessità totale}{14}{subsection.2.5.8}%
+\contentsline {section}{\numberline {2.6}Formulazione ILP e risoluzione con Gurobi}{14}{section.2.6}%
+\contentsline {subsection}{\numberline {2.6.1}Dalla formulazione al codice.}{14}{subsection.2.6.1}%
+\contentsline {subsection}{\numberline {2.6.2}Limite di tempo e stato della soluzione.}{15}{subsection.2.6.2}%
+\contentsline {subsection}{\numberline {2.6.3}Perché il linguaggio non incide sul confronto dei tempi.}{15}{subsection.2.6.3}%
+\contentsline {subsection}{\numberline {2.6.4}Perché confrontare con un secondo metodo esatto.}{15}{subsection.2.6.4}%

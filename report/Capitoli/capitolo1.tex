@@ -18,9 +18,9 @@ Un \textbf{Minimum Vertex Cover} è un vertex cover di cardinalità minima.
 Il problema del Minimum Vertex Cover è un classico problema NP-hard, il che significa che non esiste un algoritmo noto che possa risolverlo in tempo polinomiale per tutti i grafi in input (a meno che P = NP). 
 Tuttavia, esistono algoritmi approssimati e euristici che possono fornire soluzioni vicine al minimo in tempi ragionevoli per molti casi pratici.
 
-Nel seguito vengono presentati tre approcci algoritmici al problema: un algoritmo esatto basato su branch-and-bound, un algoritmo di approssimazione con garanzia fattore 2, e un'euristica greedy.
+Nel seguito vengono presentati due approcci algoritmici al problema: trattazione dell'algoritmo approssimato (Sezione~\ref{aprox}) e algoritmo greedy (Sezione~\ref{greedy}), e dall'altra parte la trattazione degli algoritmi esatti (forza bruta, branch-and-bound e programmazione lineare).
 
-\section{Algoritmi}
+\section{Algoritmi approssimazione e euristiche}
 
 \subsection{2-Approximation via Maximal Matching} \label{aprox}
 
@@ -55,16 +55,46 @@ L'algoritmo basato su matching massimale (Maximal Matching) è un algoritmo di a
 Sia $C^*$ un Minimum Vertex Cover ottimale e sia $M$ un matching massimale trovato dall'algoritmo. Poiché $M$ è un matching, ogni arco in $M$ richiede almeno un vertice in $C^*$ per essere coperto. Pertanto, $|C^*| \geq |M|$. D'altra parte, l'algoritmo seleziona entrambi i vertici di ogni arco in $M$, quindi $|C| = 2|M|$. Combinando queste disuguaglianze, otteniamo $|C| = 2|M| \leq 2|C^*|$, dimostrando che l'algoritmo è un algoritmo di approssimazione $2$-approssimato.
 \end{proof}
 
+\subsection{Greedy Heuristic}
 
-\subsection{Exact Branch-and-Bound}
-\subsubsection{Forza Bruta}
+\textbf{L'idea:} Questo algoritmo si basa sulla strategia greedy, che consiste nel fare scelte locali ottimali con la speranza di ottenere una soluzione globale ottimale. In questo caso, l'algoritmo seleziona iterativamente il vertice con il grado più alto (cioè il vertice con il maggior numero di archi incidenti) e lo aggiunge al vertex cover. Dopo aver aggiunto un vertice, tutti gli archi incidenti su di esso vengono rimossi dal grafo residuo. Questo processo continua fino a quando non ci sono più archi da coprire.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\SetKwProg{Fn}{Procedura}{}{end}
+\caption{Algoritmo Greedy per Vertex Cover}
+\label{alg:greedy_vertex_cover}
+
+\Fn{\textsc{GreedyVertexCover}$(G)$}{
+    $C \gets \emptyset$\;
+    $G' \gets$ copia di $G$\;
+    \While{$E(G') \neq \emptyset$}{
+        $u \gets \arg\max_{v \in V(G')} \deg(v)$\;
+        $C \gets C \cup \{u\}$\;
+        rimuovi $u$ e tutti gli archi incidenti a $u$ da $G'$\;
+    }
+    \Return $C$\;
+}
+
+\end{algorithm}
+
+\textbf{Tempo di esecuzione:} L'algoritmo ha una complessità di $O(|V|^2+|E|)$, poiché in ogni iterazione dobbiamo trovare il vertice con il grado massimo, e questo può richiedere $O(|V|)$ tempo. In totale, l'algoritmo può eseguire fino a $|V|$ iterazioni nel caso peggiore. Quando un vertice viene rimosso, viene fatta una scansione della lista di adiacenza per rimuovere gli archi incidenti, il che richiede $O(|E|)$.
+
+\textbf{Correttezza:} L'algoritmo garantisce che ogni arco del grafo abbia almeno un estremo nel vertex cover risultante, quindi $C$ è un vertex cover valido. Tuttavia, non garantisce che $C$ sia il Minimum Vertex Cover, poiché la strategia greedy può portare a soluzioni subottimali.
+
+A differenza dell'algoritmo di approssimazione basato su matching massimale, l'euristica greedy non fornisce una garanzia di approssimazione. In pratica, può produrre soluzioni molto vicine al minimo in alcuni casi, ma può anche produrre soluzioni significativamente più grandi in altri. Perciò, questa tesina ha come obiettivo confrontare le prestazioni reali dell'algoritmo greedy con quelle dell'algoritmo di approssimazione basato su matching massimale, al fine di valutare quale approccio sia più efficace in scenari pratici.
+
+\section{Algoritmi esatti}
+
+\subsection{Forza Bruta}
 L'approccio più semplice per risolvere il Minimum Vertex Cover in modo esatto è la forza bruta: enumerare tutti i possibili sottoinsiemi di vertici e restituire il più piccolo che copre tutti gli archi.
 
 Infatti, dato un grafo con $n$ vertici, ci sono $2^n$ possibili sottoinsiemi di vertici. Per ogni sottoinsieme, dobbiamo verificare se copre tutti gli archi del grafo. Questo porta a una complessità temporale di $O(2^n \cdot |E|)$, che è impraticabile per grafi di dimensioni anche moderate.
 
 Perciò, spesso si ricorre a tecniche più sofisticate che evitano di esplorare tutte le combinazioni, come il branch-and-bound.
 
-\subsubsection{Branch-and-Bound}
+
+\subsection{Exact Branch-and-Bound} 
 
 L'idea del branch-and-bound è molto semplice: lo spazio delle soluzioni viene esplorato in modo intelligente, evitando di esaminare soluzioni che non possono essere migliori di quelle già trovate.
 
@@ -106,8 +136,8 @@ Il branch-and bound si basa su tre concetti chiave:
 }
 
 
-\caption{Branch and Bound per Minimum Vertex Cover}
-\label{alg:branch_and_bound}
+\caption{Branch and Bound per Minimum Vertex Cover} 
+\label{alg:branch_and_bound} 
 \end{algorithm}
 
 \textbf{Correttezza: } Per ogni arco $(u, v)$, l'algoritmo esplora entrambe le possibilità: includere $u$ o includere $v$ nel vertex cover. La potatura garantisce che non vengano esplorate soluzioni che non possono essere migliori di quella corrente. Alla fine, l'algoritmo restituisce il vertex cover minimo trovato.
@@ -134,33 +164,33 @@ ideale per il calcolo del lower bound nel Branch and Bound: fornisce
 una stima per difetto garantita e il suo calcolo non compromette 
 l'efficienza dell'algoritmo.
 
-Un primo obiettivo di questa tesina è di confrontare le prestazioni del branch and bound con l'allgoritmo esatto di forza bruta, al fine di valutare l'impatto della potatura sul tempo di esecuzione reale.
+\subsection{Programmazione Lineare Intera (ILP)} \label{ilp}
 
-\section{Greedy Heuristic}
+\textbf{Perché rimappare il problema:} gli algoritmi esatti visti finora (forza bruta e branch-and-bound) risolvono il Minimum Vertex Cover esplorando direttamente lo spazio dei sottoinsiemi di $V$. Un approccio alternativo, ma altrettanto esatto, consiste nel riformulare il problema come un programma lineare intero (\textit{Integer Linear Program}, ILP): un modello matematico costituito da una funzione obiettivo lineare da minimizzare, soggetta a un insieme di vincoli lineari, in cui le variabili sono vincolate ad assumere valori interi.
 
-\textbf{L'idea:} Questo algoritmo si basa sulla strategia greedy, che consiste nel fare scelte locali ottimali con la speranza di ottenere una soluzione globale ottimale. In questo caso, l'algoritmo seleziona iterativamente il vertice con il grado più alto (cioè il vertice con il maggior numero di archi incidenti) e lo aggiunge al vertex cover. Dopo aver aggiunto un vertice, tutti gli archi incidenti su di esso vengono rimossi dal grafo residuo. Questo processo continua fino a quando non ci sono più archi da coprire.
+Questa riformulazione è vantaggiosa per tre motivi. Primo, permette di delegare la risoluzione a solver general-purpose (come Gurobi) che incorporano decenni di ricerca in ottimizzazione combinatoria, con tecniche di \textit{branch-and-cut}, \textit{presolve} ed euristiche primali ben più sofisticate del semplice lower bound basato su matching massimale usato nella sottosezione precedente. Secondo, il rilassamento continuo del modello (discusso più sotto) fornisce un limite inferiore teorico alternativo sulla cardinalità del cover ottimo, indipendente da quello basato sul matching. Terzo, un solver maturo e ampiamente validato costituisce un \textit{oracolo indipendente}: confrontare l'output del branch-and-bound implementato in questa tesina con quello di Gurobi sulle stesse istanze permette di validarne empiricamente la correttezza — aspetto centrale quando si implementa da zero un metodo esatto.
 
-\begin{algorithm}[H]
-\DontPrintSemicolon
-\SetKwProg{Fn}{Procedura}{}{end}
-\caption{Algoritmo Greedy per Vertex Cover}
-\label{alg:greedy_vertex_cover}
+\textbf{Formulazione:}
 
-\Fn{\textsc{GreedyVertexCover}$(G)$}{
-    $C \gets \emptyset$\;
-    $G' \gets$ copia di $G$\;
-    \While{$E(G') \neq \emptyset$}{
-        $u \gets \arg\max_{v \in V(G')} \deg(v)$\;
-        $C \gets C \cup \{u\}$\;
-        rimuovi $u$ e tutti gli archi incidenti a $u$ da $G'$\;
-    }
-    \Return $C$\;
-}
+\begin{definiz}[Formulazione ILP del Minimum Vertex Cover]
+Dato un grafo $G=(V,E)$, si associ ad ogni vertice $v \in V$ una variabile decisionale binaria $x_v$ tale che
+\[
+x_v = 1 \iff v \in C.
+\]
+Il problema si formula quindi come il seguente programma lineare intero:
+\begin{align*}
+\text{minimizzare} \quad & \sum_{v \in V} x_v \\
+\text{soggetto a} \quad & x_u + x_v \geq 1 \quad \forall (u,v) \in E \\
+& x_v \in \{0,1\} \quad \forall v \in V
+\end{align*}
+\end{definiz}
 
-\end{algorithm}
+\begin{teorema}[Equivalenza tra ILP e Minimum Vertex Cover] \label{ilp-equiv}
+Un insieme $C \subseteq V$ è un vertex cover valido di $G$ se e solo se il vettore $x \in \{0,1\}^{|V|}$ definito da $x_v = 1 \iff v \in C$ soddisfa tutti i vincoli del programma precedente. Di conseguenza, una soluzione ottima del programma corrisponde esattamente a un Minimum Vertex Cover di $G$.
+\end{teorema}
 
-\textbf{Tempo di esecuzione:} L'algoritmo ha una complessità di $O(|V|^2+|E|)$, poiché in ogni iterazione dobbiamo trovare il vertice con il grado massimo, e questo può richiedere $O(|V|)$ tempo. In totale, l'algoritmo può eseguire fino a $|V|$ iterazioni nel caso peggiore. Quando un vertice viene rimosso, viene fatta una scansione della lista di adiacenza per rimuovere gli archi incidenti, il che richiede $O(|E|)$.
+\begin{proof}
+Per ogni arco $(u,v) \in E$, il vincolo $x_u + x_v \geq 1$ impone che almeno una delle due variabili sia pari a 1, ovvero che almeno uno tra $u$ e $v$ appartenga a $C$ — condizione equivalente alla definizione di vertex cover. Poiché $\sum_v x_v$ conta esattamente $|C|$, minimizzare la funzione obiettivo equivale a minimizzare $|C|$.
+\end{proof}
 
-\textbf{Correttezza:} L'algoritmo garantisce che ogni arco del grafo abbia almeno un estremo nel vertex cover risultante, quindi $C$ è un vertex cover valido. Tuttavia, non garantisce che $C$ sia il Minimum Vertex Cover, poiché la strategia greedy può portare a soluzioni subottimali.
-
-A differenza dell'algoritmo di approssimazione basato su matching massimale, l'euristica greedy non fornisce una garanzia di approssimazione. In pratica, può produrre soluzioni molto vicine al minimo in alcuni casi, ma può anche produrre soluzioni significativamente più grandi in altri. Perciò, questa tesina ha come obiettivo confrontare le prestazioni reali dell'algoritmo greedy con quelle dell'algoritmo di approssimazione basato su matching massimale, al fine di valutare quale approccio sia più efficace in scenari pratici.
+\textbf{Buona positura del modello:} prima di invocare un solver è buona norma verificare che il modello sia ben posto. Il programma è sempre ammissibile, poiché $x_v = 1$ per ogni $v$ soddisfa banalmente tutti i vincoli ($V$ stesso è sempre un vertex cover); ed è sempre limitato inferiormente, poiché $x_v \geq 0$ implica $\sum_v x_v \geq 0$. Ammette quindi sempre una soluzione ottima finita, per ogni grafo $G$ non vuoto.

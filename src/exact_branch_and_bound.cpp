@@ -2,17 +2,12 @@
 using namespace std;
 #include "../data/graph.h"
 
-// Exact Minimum Vertex Cover via branch-and-bound (vedi report,
-// Capitolo 1, Sezione "Exact Branch-and-Bound").
-
-namespace {
-
 // Lower bound sul numero minimo di vertici necessari a coprire gli archi
 // residui: cardinalita' |M| di un matching massimale calcolato greedily
 // sul grafo residuo. Dal Teorema 1.1 (report) sappiamo |M| <= |C*|, quindi
 // e' un lower bound valido (a differenza di 2|M|, che sovrastimerebbe e
 // causerebbe una potatura scorretta).
-int lowerBoundMatching(const Graph& G, const vector<bool>& removed) {
+static int lowerBoundMatching(const Graph& G, const vector<bool>& removed) {
     int n = (int)G.size();
     vector<bool> matched(n, false);
     int matchingSize = 0;
@@ -30,7 +25,7 @@ int lowerBoundMatching(const Graph& G, const vector<bool>& removed) {
 }
 
 // Trova un arco ancora presente nel grafo residuo, o {-1,-1} se non ce ne sono.
-pair<int,int> pickResidualEdge(const Graph& G, const vector<bool>& removed) {
+static pair<int,int> pickResidualEdge(const Graph& G, const vector<bool>& removed) {
     int n = (int)G.size();
     for (int u = 0; u < n; u++) {
         if (removed[u]) continue;
@@ -40,17 +35,23 @@ pair<int,int> pickResidualEdge(const Graph& G, const vector<bool>& removed) {
     return {-1, -1};
 }
 
-void branchAndBound(const Graph& G, vector<bool>& removed, vector<int>& current,
+// Questa funzione implementa la ricorsione del branch-and-bound, con potatura
+static void branchAndBound(const Graph& G, vector<bool>& removed, vector<int>& current,
                      vector<int>& best, chrono::steady_clock::time_point deadline,
                      long long& nodesExplored, bool& timedOut) {
     nodesExplored++;
+
+    // Timeout check: se il tempo limite e' scaduto, interrompiamo la ricorsione
     if (timedOut) return;
     if (chrono::steady_clock::now() >= deadline) { timedOut = true; return; }
-
+    
+    // Potatura: se la dimensione della soluzione corrente + lower bound >= best, non esploriamo ulteriormente
     if ((int)current.size() + lowerBoundMatching(G, removed) >= (int)best.size())
-        return; // potatura
-
+        return; 
+    
+    // Scegli un arco residuo (u,v) da coprire, o {-1,-1} se non ce ne sono
     auto [u, v] = pickResidualEdge(G, removed);
+
     if (u == -1) { // nessun arco residuo: current e' un cover valido
         if (current.size() < best.size()) best = current;
         return;
@@ -59,8 +60,12 @@ void branchAndBound(const Graph& G, vector<bool>& removed, vector<int>& current,
     removed[u] = true;
     current.push_back(u);
     branchAndBound(G, removed, current, best, deadline, nodesExplored, timedOut);
+
+    //Current e removed vengono ripristinati allo stato precedente per esplorare l'altro ramo
+    //I due vettori sono condivisi tra le chiamate ricorsive, quindi le modifiche fatte in una chiamata ricorsiva persistono anche dopo il ritorno da essa. Per esplorare l'altro ramo, dobbiamo ripristinare lo stato precedente.
     current.pop_back();
     removed[u] = false;
+
     if (timedOut) return;
 
     removed[v] = true;
@@ -70,7 +75,6 @@ void branchAndBound(const Graph& G, vector<bool>& removed, vector<int>& current,
     removed[v] = false;
 }
 
-} // namespace
 
 // Upper bound iniziale: soluzione greedy, molto piu' stretta del banale
 // best = V dello pseudocodice teorico e quindi piu' efficace nel potare
@@ -83,6 +87,7 @@ ExactResult exactVertexCoverStats(const Graph& G, double timeoutSec) {
 
     vector<bool> removed(G.size(), false);
     vector<int> current;
+    // deadline per il timeout
     auto deadline = chrono::steady_clock::now() +
         chrono::duration_cast<chrono::steady_clock::duration>(chrono::duration<double>(timeoutSec));
 
