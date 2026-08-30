@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1787925043.40927 "/home/nadimuz/Scrivania/minimumVertexCover/report/main.tex" "main.pdf" "main" 1787925046.22794 0
+["pdflatex"] 1788079909.75852 "/home/nadimuz/Scrivania/minimumVertexCover/report/main.tex" "main.pdf" "main" 1788079913.17605 0
   "/etc/texmf/web2c/texmf.cnf" 1778861641.83551 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/nadimuz/Scrivania/minimumVertexCover/report/main.tex" 1787909974.72233 6659 4a881712e8eeb1966943af38bfa7a154 ""
+  "/home/nadimuz/Scrivania/minimumVertexCover/report/main.tex" 1788079900.84786 6686 a84d4a99d6875b6e5eebec8a9cea27bd ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx0800.tfm" 1136768653 3584 269b66e921ba58750c12f7f1c8ea3ebd ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx1200.tfm" 1136768653 3584 402da0b29eafbad07963b1224b222f18 ""
@@ -234,13 +234,14 @@
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1778861963 3637225 56e04e0a17c6f54ab941f11cebc293dc ""
   "Capitoli/capitolo1.tex" 1787910841.07445 14677 fa4769ece67acd0c036851af2141a59f ""
   "Capitoli/capitolo2.tex" 1787925039.86011 18623 06638b08e2405e33239ef1d731430b4f ""
+  "Capitoli/capitolo3.tex" 1788079856.50892 0 d41d8cd98f00b204e9800998ecf8427e ""
   "Capitoli/introduzione.tex" 1781791564.3174 176 7e104cae255799f3cd92526ce1456c24 ""
   "Immagini/logo.png" 1781790319.14705 81011 66ea6bba438acc881e76024d1955158e ""
   "Immagini/mvcGraph.png" 1781794270.88513 20378 a68fa01d3bb7844c2e5c967ea382257f ""
-  "main.aux" 1787925045.98013 6973 f773caa4b3910fe3ba3c1bf651828ef7 "pdflatex"
-  "main.out" 1787925045.98313 6032 19eaf1d8e0764ba571028f89dc73566e "pdflatex"
-  "main.tex" 1787909974.72233 6659 4a881712e8eeb1966943af38bfa7a154 ""
-  "main.toc" 1787925045.98513 2882 ba25d5ddefdcbccc2cae6d67c2dd3f1d "pdflatex"
+  "main.aux" 1788079912.81911 6973 f773caa4b3910fe3ba3c1bf651828ef7 "pdflatex"
+  "main.out" 1788079912.82211 6032 19eaf1d8e0764ba571028f89dc73566e "pdflatex"
+  "main.tex" 1788079900.84786 6686 a84d4a99d6875b6e5eebec8a9cea27bd ""
+  "main.toc" 1788079912.82311 2882 ba25d5ddefdcbccc2cae6d67c2dd3f1d "pdflatex"
   (generated)
   "main.aux"
   "main.log"
