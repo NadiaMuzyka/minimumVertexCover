@@ -79,4 +79,13 @@ Graph generateErdosRenyi(int n, double p, unsigned seed) {
     return G;
 }
 
-
+// Stesso modello, parametrizzato sul grado medio atteso invece che su p:
+// piu' comodo per fissare i design point (Capitolo 3), dove i due livelli
+// sparso/denso sono pensati in termini di grado medio, non di probabilita'.
+// In G(n,p) il grado atteso di un nodo e' (n-1)*p, quindi si ricava
+// p = avgDegree / (n-1) e si riusa la funzione sopra.
+Graph generateErdosRenyiByAvgDegree(int n, double avgDegree, unsigned seed) {
+    double p = (n > 1) ? avgDegree / (n - 1) : 0.0;
+    p = min(1.0, max(0.0, p)); // clamp di sicurezza se avgDegree > n-1
+    return generateErdosRenyi(n, p, seed);
+}

@@ -87,6 +87,31 @@ Il punto delicato è \emph{come} \texttt{deg} viene aggiornato. Ricalcolarlo da 
 La selezione $u \gets \arg\max_{v} \deg(v)$, invece, resta fedele allo pseudocodice: è una scansione lineare su tutti i vertici non ancora rimossi. È proprio questa scansione, ripetuta fino a $|V|$ volte (una per ogni vertice aggiunto al cover), a determinare la complessità $O(|V|^2+|E|)$: $O(|V|^2)$ per le ricerche ripetute del massimo, più $O(|E|)$ perché, sommato su tutta l'esecuzione, ogni arco viene "toccato" dall'aggiornamento dei gradi un numero costante di volte.
 
 \section{Brute Force}
+
+Implementata in \texttt{src/brute\_force.cpp}, traduce direttamente l'idea della Sezione~\ref{brute}: enumerare tutti i $2^n$ sottoinsiemi di vertici e restituire il più piccolo che copre ogni arco. Un sottoinsieme è rappresentato come una maschera di bit \texttt{mask}, dove il bit $i$ è acceso se e solo se il vertice $i$ appartiene al sottoinsieme — una codifica compatta che permette di iterare su tutti i $2^n$ sottoinsiemi con un semplice contatore intero, e di testare l'appartenenza di un vertice con un singolo confronto a livello di bit:
+
+\begin{lstlisting}[language=C++, caption={Nucleo della forza bruta (\texttt{src/brute\_force.cpp})}]
+for (int mask = 0; mask < (1 << n); mask++) {
+    if (!best.empty() && __builtin_popcount(mask) >= (int)best.size())
+        continue;                    // non puo' battere il migliore trovato
+
+    bool valid = true;
+    for (auto [u, v] : edges)
+        if (!((mask >> u) & 1) && !((mask >> v) & 1)) {
+            valid = false;           // ne' u ne' v in mask: arco scoperto
+            break;
+        }
+
+    if (valid) { /* mask e' il nuovo best */ }
+}
+\end{lstlisting}
+
+L'unica ottimizzazione rispetto all'enumerazione più ingenua è la riga di potatura in testa al ciclo: \texttt{\_\_builtin\_popcount(mask)} conta i bit accesi in \texttt{mask} (cioè la cardinalità del sottoinsieme) in una singola istruzione hardware, permettendo di scartare un sottoinsieme senza nemmeno controllare se è un cover valido, quando è già certo che non potrebbe migliorare la soluzione corrente. È però un'ottimizzazione cosmetica, non strutturale: nel caso peggiore — quando ogni sottoinsieme via via più piccolo del migliore risulta anche non valido — questa condizione non scarta nulla, e il costo resta quello dichiarato in Sezione~\ref{brute}, $O(2^n \cdot |E|)$: $2^n$ maschere da esaminare, ciascuna verificata scandendo gli $|E|$ archi del grafo.
+
+È istruttivo confrontare questa potatura con quella, ben più efficace, del branch-and-bound (Sezione~\ref{bb}): qui si scarta un singolo sottoinsieme già costruito, dopo aver comunque pagato il costo di generarlo; il branch-and-bound, invece, scarta interi sottoalberi di sottoinsiemi prima ancora di costruirli, sulla base di un lower bound calcolato sul problema residuo. È esattamente questa differenza — potare rami dello spazio di ricerca anziché singole foglie — a rendere il branch-and-bound praticabile su istanze dove la forza bruta, come mostrato nel Capitolo~3, smette di terminare in tempo ragionevole ben prima.
+
+Data la complessità esponenziale non attenuata da alcun bound reale, questa implementazione ha uno scopo puramente dimostrativo: non compare nella sperimentazione del Capitolo~3, dove il ruolo di termine di paragone esatto è affidato al confronto tra branch-and-bound e ILP/Gurobi (Sezione~\ref{ilp-impl}), l'uno perché scritto da zero in questa tesina e quindi bisognoso di validazione, l'altro perché un solver maturo può fungere da oracolo indipendente — un ruolo che la forza bruta, priva di pruning, non avrebbe comunque potuto reggere oltre le istanze più piccole.
+
 \section{Exact Branch-and-Bound} \label{bb}
 
 Implementata in \texttt{src/exact\_branch\_and\_bound.cpp}, seguendo lo pseudocodice dell'Algoritmo~\ref{alg:branch_and_bound}. Rispetto agli algoritmi precedenti, qui la distanza tra pseudocodice e codice è maggiore, perché il primo lavora su un grafo residuo $G_{\text{residuo}}$ esplicito e passato per valore ad ogni chiamata ricorsiva, mentre il secondo condivide un unico stato mutabile tra tutte le chiamate. Questa scelta introduce più di un dettaglio delicato, sia di complessità sia di correttezza.
@@ -117,7 +142,7 @@ Il punto delicato è che, essendo entrambi i vettori condivisi (non copiati) tra
 
 \subsection{Costo per nodo e complessità totale} Ogni nodo dell'albero esegue \texttt{pickResidualEdge} e \texttt{lowerBoundMatching}, entrambe $O(|V|+|E|)$: il costo per nodo è quindi $O(|V|+|E|)$. Nel caso peggiore, quando la potatura non elimina alcun ramo, l'albero ha $O(2^n)$ nodi, per una complessità totale $O(2^n \cdot (|V|+|E|))$ — coerente con il bound $O(2^n \cdot |E|)$ dimostrato nel Capitolo 1 (a meno del termine $|V|$, dominato da $|E|$ nei grafi non banalmente sparsi). Nella pratica, come discusso, la potatura riduce drasticamente il numero di nodi effettivamente visitati rispetto a questo caso peggiore.
 
-\section{Formulazione ILP e risoluzione con Gurobi}
+\section{Formulazione ILP e risoluzione con Gurobi} \label{ilp-impl}
 
 Il quarto approccio esatto è quello formalizzato nella Sezione~\ref{ilp} (Definizione ILP e Teorema~\ref{ilp-equiv}): una variabile binaria per vertice, un vincolo per arco, obiettivo la somma delle variabili. Qui ci concentriamo su come questa formulazione viene tradotta in codice e risolta.
 

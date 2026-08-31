@@ -31,6 +31,13 @@ Graph generateBarabasiAlbert(int n, int m, unsigned seed);
 std::vector<int> approxVertexCover(const Graph& G);
 std::vector<int> greedyVertexCover(const Graph& G);
 std::vector<int> exactVertexCover(const Graph& G);
+std::vector<int> bruteForceVertexCover(const Graph& G);
+
+// Forza bruta: enumera tutti i 2^n sottoinsiemi di vertici (Sezione 1.3.1
+// del report). Puramente di riferimento/verifica, non usata negli
+// esperimenti (sostituita dal confronto B&B vs ILP): pratico solo per
+// n molto piccoli (indicativamente n <= 20-25).
+std::vector<int> bruteForceVertexCover(const Graph& G);
 
 // Variante strumentata del branch-and-bound: espone nodi esplorati (per
 // misurare l'effetto della potatura) e se il timeout e' scattato prima di

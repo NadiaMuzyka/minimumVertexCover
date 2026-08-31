@@ -1,8 +1,16 @@
 #include <bits/stdc++.h>
 using namespace std;
+#include <filesystem>
 #include "../data/graph.h"
 
-// Uso: ./mvc [path_grafo] [algoritmo: approx|greedy|bb]
+// Nome del grafo senza cartella ne' estensione (es. "data/test.txt" -> "test"):
+// usato come "Grafo" nella riga CSV, stesso criterio di scripts/exact_ilp.py
+// (Path.stem), cosi' le righe restano confrontabili tra loro.
+static string graphLabel(const string& path) {
+    return filesystem::path(path).stem().string();
+}
+
+// Uso: ./mvc [path_grafo] [algoritmo: approx|greedy|bb|brute]
 int main(int argc, char* argv[]) {
     const string path = (argc > 1) ? argv[1] : "data/test.txt";
     const string algo = (argc > 2) ? argv[2] : "approx";
@@ -14,12 +22,18 @@ int main(int argc, char* argv[]) {
     cout << "Nodes: " << G.size() << "  Edges: " << pg.numEdges << "\n";
 
     vector<int> cover;
+    string status; // OPTIMAL (esatto, dimostrato) | TIME_LIMIT (esatto, non dimostrato) | HEURISTIC (approssimato)
+
     auto t0 = chrono::steady_clock::now();
-    if (algo == "approx") cover = approxVertexCover(G);
-    else if (algo == "greedy") cover = greedyVertexCover(G);
-    else if (algo == "bb") cover = exactVertexCover(G);
-    else {
-        cerr << "Algoritmo sconosciuto: " << algo << " (usa approx|greedy|bb)\n";
+    if (algo == "approx") { cover = approxVertexCover(G); status = "HEURISTIC"; }
+    else if (algo == "greedy") { cover = greedyVertexCover(G); status = "HEURISTIC"; }
+    else if (algo == "brute") { cover = bruteForceVertexCover(G); status = "OPTIMAL"; }
+    else if (algo == "bb") {
+        ExactResult r = exactVertexCoverStats(G);
+        cover = r.cover;
+        status = r.timedOut ? "TIME_LIMIT" : "OPTIMAL";
+    } else {
+        cerr << "Algoritmo sconosciuto: " << algo << " (usa approx|greedy|bb|brute)\n";
         return 1;
     }
     auto t1 = chrono::steady_clock::now();
@@ -35,6 +49,15 @@ int main(int argc, char* argv[]) {
     fout << cover.size() << "\n";
     for (size_t i = 0; i < cover.size(); ++i)
         fout << idx2id[cover[i]] << (i + 1 < cover.size() ? ' ' : '\n');
+
+    filesystem::create_directories("results");
+    bool writeHeader = !filesystem::exists("results/pilot.csv");
+    ofstream csv("results/pilot.csv", ios::app);
+    if (writeHeader)
+        csv << "N_Nodi,Grafo,Algoritmo,CPU_Time_sec,Cardinalita,Status\n";
+    csv << G.size() << "," << graphLabel(path) << "," << algo << ","
+        << fixed << setprecision(6) << (ms / 1000.0) << ","
+        << cover.size() << "," << status << "\n";
 
     return 0;
 }

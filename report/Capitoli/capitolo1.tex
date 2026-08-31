@@ -86,7 +86,7 @@ A differenza dell'algoritmo di approssimazione basato su matching massimale, l'e
 
 \section{Algoritmi esatti}
 
-\subsection{Forza Bruta}
+\subsection{Forza Bruta} \label{brute}
 L'approccio più semplice per risolvere il Minimum Vertex Cover in modo esatto è la forza bruta: enumerare tutti i possibili sottoinsiemi di vertici e restituire il più piccolo che copre tutti gli archi.
 
 Infatti, dato un grafo con $n$ vertici, ci sono $2^n$ possibili sottoinsiemi di vertici. Per ogni sottoinsieme, dobbiamo verificare se copre tutti gli archi del grafo. Questo porta a una complessità temporale di $O(2^n \cdot |E|)$, che è impraticabile per grafi di dimensioni anche moderate.

@@ -1,0 +1,4 @@
+N_Nodi,Grafo,Algoritmo,CPU_Time_sec,Cardinalita,Status
+7,test,brute,0.000011,3,OPTIMAL
+7,test,bb,0.000010,3,OPTIMAL
+7,test,0.001053,3,OPTIMAL
