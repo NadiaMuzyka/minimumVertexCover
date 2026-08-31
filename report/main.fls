@@ -414,6 +414,11 @@ INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam10.tfm
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam10.tfm
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
+INPUT ./Capitoli/capitolo4.tex
+INPUT ./Capitoli/capitolo4.tex
+INPUT ./Capitoli/capitolo4.tex
+INPUT ./Capitoli/capitolo4.tex
+INPUT Capitoli/capitolo4.tex
 INPUT main.aux
 INPUT ./main.out
 INPUT ./main.out

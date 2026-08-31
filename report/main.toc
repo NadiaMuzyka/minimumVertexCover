@@ -38,3 +38,4 @@
 \contentsline {section}{\numberline {3.4}Come sono stati scelti i due livelli sparso e denso}{21}{section.3.4}%
 \contentsline {subsection}{\numberline {3.4.1}La soglia di connettività come ancoraggio per il livello sparso}{22}{subsection.3.4.1}%
 \contentsline {subsection}{\numberline {3.4.2}Il livello denso}{22}{subsection.3.4.2}%
+\contentsline {chapter}{\numberline {4}Esperimento pilota}{23}{chapter.4}%
