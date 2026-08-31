@@ -12,7 +12,7 @@ TARGETS = mvc run_quality run_scale run_nphard run_bb_vs_ilp
 # Object file comuni a TUTTI gli eseguibili: gli algoritmi (approx, greedy,
 # branch-and-bound) e le utility di lettura/scrittura/generazione grafi.
 # Ogni eseguibile li linka tutti, cambia solo il suo main_*.o specifico.
-OBJS = data/utils.o src/approx.o src/greedy.o src/exact_branch_and_bound.o
+OBJS = data/utils.o src/approx.o src/greedy.o src/exact_branch_and_bound.o src/brute_force.o
 
 # Target di default: `make` o `make all` costruisce tutti e 5 gli eseguibili.
 all: $(TARGETS)

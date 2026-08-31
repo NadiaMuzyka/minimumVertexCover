@@ -20,7 +20,7 @@ vector<int> bruteForceVertexCover(const Graph& G) {
     //Mask scorre da 0 (nessun vertice incluso) a 2^n-1 (tutti i vertici inclusi).
     // Esempio: n=3, mask=5 (binario 101) corrisponde al sottoinsieme {0,2} di vertici.
     // 1 << n = 1 spostato di n posizioni a sinistra, cioè 2^n.
-    for (int mask = 0; mask < (1 << n); mask++) {
+    for (unsigned long long mask = 0; mask < (1ULL << n); mask++) {
         // Potatura banale: se questo sottoinsieme e' gia' grande almeno
         // quanto il migliore trovato finora, non serve nemmeno controllare
         // se e' un cover valido.
