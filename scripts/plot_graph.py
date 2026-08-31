@@ -2,6 +2,7 @@
 """Disegna un grafo letto da un file edge-list (formato SNAP) usando networkx."""
 
 import argparse
+import re
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -12,13 +13,24 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def read_graph(path: Path) -> nx.Graph:
     G = nx.Graph()
+    declared_n = None
     with open(path) as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith("#"):
+            if not line:
+                continue
+            if line.startswith("#"):
+                m = re.match(r"#\s*Nodes:\s*(\d+)\s*Edges:\s*(\d+)", line)
+                if m:
+                    declared_n = int(m.group(1))
                 continue
             u, v = line.split()[:2]
             G.add_edge(int(u), int(v))
+
+    if declared_n is not None and G.number_of_nodes() < declared_n:
+        if all(0 <= node < declared_n for node in G.nodes()):
+            G.add_nodes_from(range(declared_n))
+
     return G
 
 

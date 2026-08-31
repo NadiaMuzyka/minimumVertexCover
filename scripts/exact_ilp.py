@@ -41,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("graph_file", help="file edge-list del grafo (formato SNAP-like)")
     parser.add_argument("-o", "--output", default=str(ROOT / "results" / "ilp.csv"))
-    parser.add_argument("--time-limit", type=float, default=60.0)
+    parser.add_argument("--time-limit", type=float, default=180.0)
     parser.add_argument("--label", default=None, help="etichetta del grafo nel CSV (default: nome file)")
     args = parser.parse_args()
 
@@ -55,9 +55,8 @@ def main():
     write_header = not out_path.exists()
     with open(out_path, "a") as f:
         if write_header:
-            f.write("N_Nodi,Grafo,CPU_Time_sec,Cardinalita,Status\n")
-        f.write(f"{G.number_of_nodes()},{label},{runtime:.6f},{cardinality},{status}\n")
-
+            f.write("N_Nodi,Grafo,Algoritmo,CPU_Time_sec,Cardinalita,Status\n")
+        f.write(f"{G.number_of_nodes()},{label},ILP,{runtime:.6f},{cardinality},{status}\n")
     print(f"{label} (n={G.number_of_nodes()}): {runtime:.6f}s, cardinalita={cardinality}, status={status}")
 
 

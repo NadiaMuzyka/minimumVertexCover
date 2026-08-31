@@ -15,6 +15,7 @@ ParsedGraph readGraphFromFile(const string& path) {
     vector<int> idx2id;
     vector<pair<int,int>> edges;
     string line;
+    int declaredN = -1;
 
     auto getIdx = [&](int raw) -> int {
         auto [it, inserted] = id2idx.emplace(raw, (int)id2idx.size());
@@ -23,13 +24,28 @@ ParsedGraph readGraphFromFile(const string& path) {
     };
 
     while (getline(fin, line)) {
-        if (line.empty() || line[0] == '#') continue;
+        if (line.empty()) continue;
+        if (line[0] == '#') {
+            int n_hdr, m_hdr;
+            if (sscanf(line.c_str(), "# Nodes: %d Edges: %d", &n_hdr, &m_hdr) == 2)
+                declaredN = n_hdr;
+            continue;
+        }
         istringstream ss(line);
         int u, v;
         if (!(ss >> u >> v)) continue;
         int a = getIdx(u), b = getIdx(v);
         if (a != b)
             edges.emplace_back(a, b);
+    }
+
+    if (declaredN > (int)id2idx.size()) {
+        bool idsFitDeclaredRange = true;
+        for (auto& [raw, idx] : id2idx)
+            if (raw < 0 || raw >= declaredN) { idsFitDeclaredRange = false; break; }
+        if (idsFitDeclaredRange)
+            for (int v = 0; v < declaredN; v++)
+                getIdx(v);
     }
 
     int n = (int)id2idx.size();
