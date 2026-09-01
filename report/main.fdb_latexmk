@@ -1,7 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1788292222.70729 "/home/nadimuz/Scrivania/minimumVertexCover/report/main.tex" "main.pdf" "main" 1788292228.91176 0
+["pdflatex"] 1788296823.10556 "main.tex" "main.pdf" "main" 1788296825.55734 0
   "/etc/texmf/web2c/texmf.cnf" 1778861641.83551 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/nadimuz/Scrivania/minimumVertexCover/report/main.tex" 1788276663.00373 6740 90bd87de84ff5c81a24303ff65d04e0d ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx0800.tfm" 1136768653 3584 269b66e921ba58750c12f7f1c8ea3ebd ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx1200.tfm" 1136768653 3584 402da0b29eafbad07963b1224b222f18 ""
@@ -236,8 +235,8 @@
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1778861841 5541477 3118940318599480888143717dd32d64 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1778861963 3637225 56e04e0a17c6f54ab941f11cebc293dc ""
   "Capitoli/capitolo1.tex" 1788251023.58034 14588 793c1fa191a3d8100f48fbd9620a83f5 ""
-  "Capitoli/capitolo2.tex" 1788292221.79817 19084 b6655d43c82b9d327cc11cd1d5bcdaa1 ""
-  "Capitoli/capitolo3.tex" 1788188793.7922 10198 2806c97b0970d3edc9fed5cb469890d0 ""
+  "Capitoli/capitolo2.tex" 1788295093.62782 17188 e4b0dc9389850e2ce5dc056a1fd803b5 ""
+  "Capitoli/capitolo3.tex" 1788296612.50984 7155 4c44265d2a0eddf348ee1b038dd1e611 ""
   "Capitoli/capitolo4.tex" 1788194717.95423 8329 1d40fea893475aee0a1f630f48d100d3 ""
   "Capitoli/capitolo5.tex" 1788282563.75743 17191 1a6864c8585eab0658adfecf13ac9dea ""
   "Capitoli/introduzione.tex" 1781791564.3174 176 7e104cae255799f3cd92526ce1456c24 ""
@@ -253,10 +252,10 @@
   "Immagini/pilota/sol.png" 1788192881.83515 124952 283b815554b99e53aac4b6dbe8ee38bf ""
   "Immagini/pilota/tempo_denso.png" 1788192903.81705 109116 0fdb83ecef3b1b39cfb8d03278da7111 ""
   "Immagini/pilota/tempo_sparso.png" 1788192921.89796 99000 5f491437503d24847e5f8ed4f888e8d1 ""
-  "main.aux" 1788292228.43416 17838 f3445e4391e8dff04ff53518162109d4 "pdflatex"
-  "main.out" 1788292228.44016 11359 aa98c8f3739a1f360ad46bc59697ff03 "pdflatex"
-  "main.tex" 1788276663.00373 6740 90bd87de84ff5c81a24303ff65d04e0d ""
-  "main.toc" 1788292228.44316 5532 be88ccb4f0769942e6a7400ee4b070ba "pdflatex"
+  "main.aux" 1788296825.36925 17104 41b9072d18cf168d8c685f847dae85ff "pdflatex"
+  "main.out" 1788296825.37125 10603 02acb9cbcfc892d14001bc6f4862c7de "pdflatex"
+  "main.tex" 1788296817.14397 6936 93e4bce4750da61ea39dab34fd78d6ed ""
+  "main.toc" 1788296825.37225 5333 8937ce42b18d9bc01edcb0c55300158a "pdflatex"
   (generated)
   "main.aux"
   "main.log"

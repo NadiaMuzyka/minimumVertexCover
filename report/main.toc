@@ -19,44 +19,43 @@
 \contentsline {section}{\numberline {2.5}Exact Branch-and-Bound}{13}{section.2.5}%
 \contentsline {subsection}{\numberline {2.5.1}Rappresentazione dello stato e selezione dell'arco}{14}{subsection.2.5.1}%
 \contentsline {subsection}{\numberline {2.5.2}Bound e correttezza del branching}{14}{subsection.2.5.2}%
-\contentsline {subsection}{\numberline {2.5.3}Terminazione e complessità}{15}{subsection.2.5.3}%
+\contentsline {subsection}{\numberline {2.5.3}Limite di tempo}{15}{subsection.2.5.3}%
 \contentsline {section}{\numberline {2.6}Formulazione ILP e risoluzione con Gurobi}{15}{section.2.6}%
 \contentsline {subsection}{\numberline {2.6.1}Dalla formulazione al codice.}{15}{subsection.2.6.1}%
 \contentsline {subsection}{\numberline {2.6.2}Limite di tempo e stato della soluzione.}{16}{subsection.2.6.2}%
-\contentsline {subsection}{\numberline {2.6.3}Perché il linguaggio non incide sul confronto dei tempi.}{16}{subsection.2.6.3}%
+\contentsline {subsection}{\numberline {2.6.3}Indipendenza dal linguaggio.}{16}{subsection.2.6.3}%
 \contentsline {subsection}{\numberline {2.6.4}Perché confrontare con un secondo metodo esatto.}{16}{subsection.2.6.4}%
-\contentsline {chapter}{\numberline {3}Il dataset sperimentale}{18}{chapter.3}%
-\contentsline {section}{\numberline {3.1}Perché un generatore}{18}{section.3.1}%
-\contentsline {section}{\numberline {3.2}Il modello Erdos-Renyi $G(n,p)$}{19}{section.3.2}%
-\contentsline {subsection}{\numberline {3.2.1}Grado atteso di un vertice}{19}{subsection.3.2.1}%
-\contentsline {section}{\numberline {3.3}Riparametrizzazione sul grado medio}{20}{section.3.3}%
-\contentsline {section}{\numberline {3.4}Come sono stati scelti i due livelli sparso e denso}{20}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}La soglia di connettività come ancoraggio per il livello sparso}{21}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}Il livello denso}{21}{subsection.3.4.2}%
-\contentsline {chapter}{\numberline {4}Esperimento pilota}{22}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Configurazione}{22}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Primo tentativo: un bug nella forza bruta}{22}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Secondo tentativo: risultati}{23}{section.4.3}%
-\contentsline {section}{\numberline {4.4}Prestazioni}{24}{section.4.4}%
-\contentsline {chapter}{\numberline {5}Sperimentazione}{27}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Impostazione comune agli esperimenti}{27}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Esperimento 1: il limite pratico del Branch-and-Bound}{27}{section.5.2}%
-\contentsline {subsection}{\numberline {5.2.1}Obiettivo}{28}{subsection.5.2.1}%
-\contentsline {subsection}{\numberline {5.2.2}Metodologia}{28}{subsection.5.2.2}%
-\contentsline {subsection}{\numberline {5.2.3}Risultati}{28}{subsection.5.2.3}%
-\contentsline {subsection}{\numberline {5.2.4}Discussione}{29}{subsection.5.2.4}%
-\contentsline {section}{\numberline {5.3}Esperimento 2: il limite pratico dell'ILP}{29}{section.5.3}%
-\contentsline {subsection}{\numberline {5.3.1}Obiettivo}{29}{subsection.5.3.1}%
-\contentsline {subsection}{\numberline {5.3.2}Metodologia}{29}{subsection.5.3.2}%
-\contentsline {subsection}{\numberline {5.3.3}Risultati}{29}{subsection.5.3.3}%
-\contentsline {subsection}{\numberline {5.3.4}Discussione}{30}{subsection.5.3.4}%
-\contentsline {section}{\numberline {5.4}Esperimento 3: l'andamento di 2-approssimato e greedy}{30}{section.5.4}%
-\contentsline {subsection}{\numberline {5.4.1}Obiettivo}{30}{subsection.5.4.1}%
-\contentsline {subsection}{\numberline {5.4.2}Metodologia}{31}{subsection.5.4.2}%
-\contentsline {subsection}{\numberline {5.4.3}Risultati}{31}{subsection.5.4.3}%
-\contentsline {subsection}{\numberline {5.4.4}Discussione}{33}{subsection.5.4.4}%
-\contentsline {section}{\numberline {5.5}Esperimento 4: la qualità di 2-approssimato e greedy}{33}{section.5.5}%
-\contentsline {subsection}{\numberline {5.5.1}Obiettivo}{33}{subsection.5.5.1}%
-\contentsline {subsection}{\numberline {5.5.2}Metodologia}{33}{subsection.5.5.2}%
-\contentsline {subsection}{\numberline {5.5.3}Risultati}{33}{subsection.5.5.3}%
-\contentsline {subsection}{\numberline {5.5.4}Discussione}{35}{subsection.5.5.4}%
+\contentsline {chapter}{\numberline {3}Il dataset sperimentale}{17}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Perché un generatore}{17}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Il modello Erdos-Renyi $G(n,p)$}{18}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Riparametrizzazione sul grado medio}{18}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Scelta dei due livelli sparso e denso}{19}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Il livello sparso}{19}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Il livello denso}{19}{subsection.3.4.2}%
+\contentsline {chapter}{\numberline {4}Esperimento pilota}{21}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Configurazione}{21}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Primo tentativo: un bug nella forza bruta}{21}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Secondo tentativo: risultati}{22}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Prestazioni}{23}{section.4.4}%
+\contentsline {chapter}{\numberline {5}Sperimentazione}{26}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Impostazione comune agli esperimenti}{26}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Esperimento 1: il limite pratico del Branch-and-Bound}{26}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Obiettivo}{27}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Metodologia}{27}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Risultati}{27}{subsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.2.4}Discussione}{28}{subsection.5.2.4}%
+\contentsline {section}{\numberline {5.3}Esperimento 2: il limite pratico dell'ILP}{28}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Obiettivo}{28}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}Metodologia}{28}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Risultati}{28}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}Discussione}{29}{subsection.5.3.4}%
+\contentsline {section}{\numberline {5.4}Esperimento 3: l'andamento di 2-approssimato e greedy}{29}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Obiettivo}{29}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Metodologia}{30}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.3}Risultati}{30}{subsection.5.4.3}%
+\contentsline {subsection}{\numberline {5.4.4}Discussione}{32}{subsection.5.4.4}%
+\contentsline {section}{\numberline {5.5}Esperimento 4: la qualità di 2-approssimato e greedy}{32}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Obiettivo}{32}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Metodologia}{32}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}Risultati}{32}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}Discussione}{34}{subsection.5.5.4}%

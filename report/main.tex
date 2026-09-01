@@ -24,6 +24,12 @@
 \usepackage{booktabs}
 \usepackage{array}
 
+% Per default LaTeX centra verticalmente una pagina che contiene solo
+% float (tabelle/figure senza testo attorno). Questo la allinea in alto.
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
+
 % ── Code listings ────────────────────────────────────────────────────
 \usepackage{listings}
 \lstset{

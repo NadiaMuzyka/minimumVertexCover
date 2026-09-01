@@ -4,15 +4,17 @@ Questo capitolo descrive come vengono generati i grafi su cui gli algoritmi pres
 
 \section{Perché un generatore}
 
-Una possibilità per costruire il dataset sarebbe stata scaricare grafi già pronti: dataset reali (es. reti sociali, grafi di citazione) oppure testbed pubblici pensati apposta per il problema del Vertex Cover, come le istanze della PACE 2019 Challenge. Entrambe le strade sono state scartate a favore di un generatore sintetico, per due motivi concreti legati a questa sperimentazione:
+Una possibilità per costruire il dataset sarebbe stata scaricare dataset reali oppure testbed pubblici pensati apposta per il problema del Vertex Cover, come le istanze della PACE 2019 Challenge. Entrambe le strade sono state scartate a favore di un generatore sintetico, per due motivi concreti legati a questa sperimentazione:
 
 \begin{itemize}
-    \item \textbf{Controllo diretto sui fattori sperimentali.} L'obiettivo non è valutare gli algoritmi su un'istanza qualunque, ma osservarne il comportamento al variare di $n$ (numero di vertici) e della densità del grafo. Un dataset reale o un testbed pubblico fornisce grafi con $n$ e densità già fissati da chi li ha raccolti: non è possibile chiedere "lo stesso grafo, ma con il doppio dei vertici" o "la stessa dimensione, ma più denso". Un generatore, al contrario, permette di fissare $n$ e densità come variabili indipendenti, esattamente ciò che serve per una campagna sperimentale controllata.
+    \item \textbf{Controllo diretto sui fattori sperimentali.} L'obiettivo non è valutare gli algoritmi su un'istanza qualunque, ma osservarne il comportamento al variare di $n$ (numero di vertici) e della densità del grafo. Un dataset reale o un testbed pubblico fornisce grafi con $n$ e densità già fissati da chi li ha raccolti. Un generatore, al contrario, permette di fissare $n$ e densità come variabili indipendenti, esattamente ciò che serve per una campagna sperimentale controllata.
 
-    \item \textbf{Nessun vincolo di scala imposto dal dataset.} I grafi reali scaricabili hanno tipicamente migliaia o decine di migliaia di nodi: troppi per gli algoritmi esatti (forza bruta, branch-and-bound), che sono proprio gli algoritmi il cui comportamento al crescere di $n$ interessa di più. Un generatore permette di produrre istanze di qualunque dimensione, comprese quelle piccole necessarie a testare gli algoritmi esatti.
+    \item \textbf{Nessun vincolo di scala imposto dal dataset.} I grafi reali scaricabili hanno tipicamente migliaia o decine di migliaia di nodi, troppi per gli algoritmi esatti (forza bruta, branch-and-bound), che sono proprio gli algoritmi il cui comportamento al crescere di $n$ interessa di più. Un generatore permette di produrre istanze di qualunque dimensione, comprese quelle piccole necessarie a testare gli algoritmi esatti.
 \end{itemize}
 
-Il costo di questa scelta è la mancata rappresentatività di applicazioni reali: un grafo generato non ha necessariamente le proprietà strutturali (community, hub, distribuzioni di grado non uniformi) di una rete reale. Per gli obiettivi di questa relazione — confrontare tempo di esecuzione e qualità della soluzione tra algoritmi, al variare di dimensione e densità — questo compromesso è accettabile: non si sta cercando di stimare le prestazioni su un'applicazione specifica, ma di caratterizzare il comportamento asintotico e la qualità relativa dei quattro approcci.
+Il costo di questa scelta è la mancata rappresentatività di applicazioni reali. 
+Per gli obiettivi di questa relazionea algoritmi, questo compromesso è accettabile. 
+Non si sta cercando di stimare le prestazioni su un'applicazione specifica, ma di caratterizzare il comportamento asintotico e la qualità relativa dei cinque approcci.
 
 \section{Il modello Erdos-Renyi $G(n,p)$}
 
@@ -20,7 +22,8 @@ Il costo di questa scelta è la mancata rappresentatività di applicazioni reali
 Il modello $G(n,p)$ genera un grafo non orientato su $n$ vertici includendo, indipendentemente per ogni coppia di vertici $\{u,v\}$ con $u \neq v$, l'arco $(u,v)$ con probabilità $p \in [0,1]$.
 \end{definiz}
 
-È il modello più semplice di grafo casuale: nessuna struttura viene imposta a priori, ogni potenziale arco ha la stessa probabilità di comparire, indipendentemente dagli altri. Per questo motivo è considerato il generatore "puramente casuale" di riferimento, in contrapposizione a modelli che impongono invece una struttura specifica (ad esempio grafi \emph{scale-free}, con pochi vertici di grado molto alto). Per gli obiettivi di questa sperimentazione — un unico fattore di densità da poter variare in modo pulito — questa assenza di struttura aggiuntiva è un vantaggio: la densità resta l'unica proprietà che distingue un'istanza dall'altra.
+È il modello più semplice di grafo casuale: nessuna struttura viene imposta a priori, ogni potenziale arco ha la stessa probabilità di comparire, indipendentemente dagli altri. Per questo motivo è considerato il generatore puramente casuale di riferimento, in contrapposizione a modelli che impongono invece una struttura specifica. 
+Per gli obiettivi di questa sperimentazione  questa assenza di struttura aggiuntiva è un vantaggio. Infatti, la densità resta l'unica proprietà che distingue un'istanza dall'altra.
 
 \begin{lstlisting}[language=C++, caption={Generatore Erdos-Renyi (\texttt{data/utils.cpp})}]
 Graph generateErdosRenyi(int n, double p, unsigned seed) {
@@ -37,18 +40,12 @@ Graph generateErdosRenyi(int n, double p, unsigned seed) {
 }
 \end{lstlisting}
 
-Il seed passato a \texttt{mt19937} garantisce la riproducibilità: la stessa coppia $(n,p)$ con lo stesso seed produce sempre lo stesso grafo, requisito necessario per poter ripetere un esperimento e per poter condividere un'istanza tra il codice C++ (forza bruta, branch-and-bound) e lo script Python che invoca Gurobi, senza dover materializzare il grafo su disco se non quando strettamente necessario.
-
-\subsection{Grado atteso di un vertice}
-
+\section{Riparametrizzazione sul grado medio}
 Fissato un vertice $v$, ciascuno degli altri $n-1$ vertici è collegato a $v$ indipendentemente con probabilità $p$: il grado di $v$ segue quindi una distribuzione binomiale $\mathrm{Bin}(n-1,\,p)$, con valore atteso
 \begin{equation}
     \mathbb{E}[\deg(v)] = (n-1)\,p.
     \label{eq:er-expected-degree}
 \end{equation}
-Questa relazione è il punto di partenza per la riparametrizzazione discussa nella prossima sezione: è ciò che permette di tradurre un grado medio target in una probabilità $p$ da passare al generatore.
-
-\section{Riparametrizzazione sul grado medio}
 
 Il generatore di base lavora in termini di probabilità $p$, ma $p$ non è il parametro più comodo per fissare i design point della sperimentazione: due grafi con la stessa $p$ ma $n$ diverso hanno densità molto diverse in termini di grado medio, che è la grandezza rispetto a cui si vuole ragionare quando si parla di grafo "sparso" o "denso". Si introduce quindi una seconda funzione, parametrizzata direttamente sul grado medio atteso, che riusa \texttt{generateErdosRenyi} invertendo la relazione~\eqref{eq:er-expected-degree}:
 \begin{equation}
@@ -64,30 +61,11 @@ Graph generateErdosRenyiByAvgDegree(int n, double avgDegree, unsigned seed) {
 }
 \end{lstlisting}
 
-Il clamp su $p$ copre il caso limite in cui il grado medio richiesto superi $n-1$ (il grado massimo possibile in un grafo semplice), riportando $p$ a $1$ invece di produrre un valore fuori dall'intervallo $[0,1]$ passato poi a \texttt{uniform\_real\_distribution}.
-
-Prima di essere usata negli esperimenti, la funzione è stata validata empiricamente confrontando il grado medio richiesto con quello effettivamente ottenuto su un campione di grafi generati, mostrato in Tabella~\ref{tab:er-avgdegree-validation}: lo scarto osservato è compatibile con la normale varianza binomiale della relazione~\eqref{eq:er-expected-degree}, non indica un errore nella riparametrizzazione.
-
-\begin{table}[htbp]
-    \centering
-    \begin{tabular}{@{}rrr@{}}
-        \toprule
-        $n$ & Grado medio richiesto & Grado medio ottenuto \\
-        \midrule
-        100  & 5.0  & 5.220 \\
-        100  & 50.0 & 49.100 \\
-        1000 & 10.0 & 10.016 \\
-        \bottomrule
-    \end{tabular}
-    \caption{Validazione empirica di \texttt{generateErdosRenyiByAvgDegree}: grado medio richiesto vs. osservato, seed fissato.}
-    \label{tab:er-avgdegree-validation}
-\end{table}
-
-\section{Come sono stati scelti i due livelli sparso e denso}
+\section{Scelta dei due livelli sparso e denso}
 
 La consegna richiede di testare gli algoritmi su grafi sparsi e su grafi densi. Tradotto nel linguaggio del disegno sperimentale, densità è un fattore qualitativo a due livelli, ciascuno dei quali va però ancorato a un valore numerico concreto del grado medio prima di poter generare un'istanza. Il criterio scelto per fissare i due livelli non è arbitrario: si appoggia a un risultato noto sulla connettività dei grafi Erdos-Renyi.
 
-\subsection{La soglia di connettività come ancoraggio per il livello sparso}
+\subsection{Il livello sparso}
 
 Un grafo $G(n,p)$ è connesso con alta probabilità quando
 \begin{equation}
@@ -100,17 +78,18 @@ al di sotto della quale il grafo tende invece a frammentarsi in più componenti.
     \label{eq:er-sparse-level}
 \end{equation}
 
-Il livello \textbf{sparso} viene fissato appena sopra questa soglia, avgDegree $= 2\ln n$: è il punto in cui il grafo è nel regime più "interessante" per il problema — abbastanza connesso da non essere una collezione di componenti banali, ma il più rado possibile compatibilmente con questo. Grafi ancora più radi (sotto la soglia) tenderebbero a spezzarsi in componenti isolate, rendendo il confronto tra algoritmi meno significativo.
+Il livello sparso viene fissato appena sopra questa soglia, avgDegree $= 2\ln n$: è il punto in cui il grafo è abbastanza connesso da non essere una collezione di componenti banali, ma il più rado possibile compatibilmente con questo. Grafi ancora più radi (sotto la soglia) tenderebbero a spezzarsi in componenti isolate, rendendo il confronto tra algoritmi meno significativo.
 
 \subsection{Il livello denso}
 
-Per il livello \textbf{denso} non esiste un analogo criterio di soglia da rispettare: l'obiettivo è semplicemente un grafo ben oltre il regime sparso, senza però avvicinarsi al grafo completo (dove il problema perde interesse: il Minimum Vertex Cover di $K_n$ è banalmente $n-1$). Si fissa
+Per il livello denso non esiste un analogo criterio di soglia da rispettare. 
+L'obiettivo è semplicemente un grafo ben oltre il regime sparso, senza però avvicinarsi al grafo completo. Si fissa:
 \begin{equation}
     \text{avgDegree} = \frac{n}{2},
 \end{equation}
 un valore a metà strada tra la soglia di connettività e il grado massimo $n-1$, sufficiente a produrre istanze nettamente più dense di quelle sparse per ogni $n$ considerato, come mostrato in Tabella~\ref{tab:sparse-dense-levels}.
 
-\begin{table}[htbp]
+\begin{table}[tbp]
     \centering
     \begin{tabular}{@{}rrr@{}}
         \toprule
@@ -127,4 +106,3 @@ un valore a metà strada tra la soglia di connettività e il grado massimo $n-1$
     \label{tab:sparse-dense-levels}
 \end{table}
 
-Da notare come il livello sparso cresca molto più lentamente di quello denso al crescere di $n$ ($O(\ln n)$ contro $O(n)$): è una conseguenza diretta della scelta di ancorare il livello sparso a una soglia strutturale del grafo piuttosto che a una frazione fissa di $n$, e riflette il fatto che, all'aumentare della dimensione, la soglia oltre la quale un Erdos-Renyi diventa tipicamente connesso cresce molto più lentamente della dimensione del grafo stessa.
