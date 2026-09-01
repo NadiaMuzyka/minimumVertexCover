@@ -105,3 +105,46 @@ Graph generateErdosRenyiByAvgDegree(int n, double avgDegree, unsigned seed) {
     p = min(1.0, max(0.0, p)); // clamp di sicurezza se avgDegree > n-1
     return generateErdosRenyi(n, p, seed);
 }
+
+bool isValidCover(const Graph& G, const vector<int>& cover) {
+    vector<bool> inCover(G.size(), false);
+    for (int v : cover) {
+        if (v < 0 || v >= (int)G.size()) return false;
+        inCover[v] = true;
+    }
+    for (int u = 0; u < (int)G.size(); u++)
+        for (int v : G[u])
+            if (v > u && !inCover[u] && !inCover[v])
+                return false;
+    return true;
+}
+
+Graph generateErdosRenyiFast(int n, double p, unsigned seed) {
+    Graph G(n);
+    if (p <= 0.0 || n < 2) return G;
+    if (p >= 1.0) p = 1.0 - 1e-15;
+    mt19937_64 rng(seed);
+    uniform_real_distribution<double> dist(0.0, 1.0);
+    double logNotP = log(1.0 - p);
+
+    long long i = 0, j = -1;
+    while (i < n) {
+        double r = dist(rng);
+        j += 1 + (long long)floor(log(1.0 - r) / logNotP);
+        while (j >= i && i < n) {
+            j -= i;
+            i++;
+        }
+        if (i < n) {
+            G[i].push_back((int)j);
+            G[(int)j].push_back((int)i);
+        }
+    }
+    return G;
+}
+
+Graph generateErdosRenyiFastByAvgDegree(int n, double avgDegree, unsigned seed) {
+    double p = (n > 1) ? avgDegree / (n - 1) : 0.0;
+    p = min(1.0, max(0.0, p));
+    return generateErdosRenyiFast(n, p, seed);
+}

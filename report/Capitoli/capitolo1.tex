@@ -1,4 +1,4 @@
-\chapter{Cenni teorici}
+\chapter{Cenni teorici}\label{capitolo1} 
 % ─────────────────────────────────────────────────────────────────────
 \section{Definizione del problema}
 % ─────────────────────────────────────────────────────────────────────
@@ -166,9 +166,23 @@ l'efficienza dell'algoritmo.
 
 \subsection{Programmazione Lineare Intera (ILP)} \label{ilp}
 
-\textbf{Perché rimappare il problema:} gli algoritmi esatti visti finora (forza bruta e branch-and-bound) risolvono il Minimum Vertex Cover esplorando direttamente lo spazio dei sottoinsiemi di $V$. Un approccio alternativo, ma altrettanto esatto, consiste nel riformulare il problema come un programma lineare intero (\textit{Integer Linear Program}, ILP): un modello matematico costituito da una funzione obiettivo lineare da minimizzare, soggetta a un insieme di vincoli lineari, in cui le variabili sono vincolate ad assumere valori interi.
+\textbf{Perché rimappare il problema:} gli algoritmi esatti visti finora (forza bruta e branch-and-bound) 
+risolvono il Minimum Vertex Cover esplorando direttamente lo spazio dei sottoinsiemi di $V$. 
+Un approccio alternativo, ma altrettanto esatto, consiste nel riformulare il problema come 
+un programma lineare intero (\textit{Integer Linear Program}, ILP): 
+un modello matematico costituito da una funzione obiettivo lineare da minimizzare, 
+soggetta a un insieme di vincoli lineari, in cui le variabili sono vincolate ad assumere 
+valori interi.
 
-Questa riformulazione è vantaggiosa per tre motivi. Primo, permette di delegare la risoluzione a solver general-purpose (come Gurobi) che incorporano decenni di ricerca in ottimizzazione combinatoria, con tecniche di \textit{branch-and-cut}, \textit{presolve} ed euristiche primali ben più sofisticate del semplice lower bound basato su matching massimale usato nella sottosezione precedente. Secondo, il rilassamento continuo del modello (discusso più sotto) fornisce un limite inferiore teorico alternativo sulla cardinalità del cover ottimo, indipendente da quello basato sul matching. Terzo, un solver maturo e ampiamente validato costituisce un \textit{oracolo indipendente}: confrontare l'output del branch-and-bound implementato in questa tesina con quello di Gurobi sulle stesse istanze permette di validarne empiricamente la correttezza — aspetto centrale quando si implementa da zero un metodo esatto.
+Questa riformulazione è vantaggiosa per tre motivi. 
+Primo, permette di delegare la risoluzione a solver general-purpose (come Gurobi) che i
+ncorporano decenni di ricerca in ottimizzazione combinatoria, con tecniche ben più sofisticate del 
+semplice lower bound basato su matching massimale usato nella sottosezione precedente. 
+Secondo, il rilassamento continuo del modello (discusso più sotto) fornisce un limite inferiore 
+teorico alternativo sulla cardinalità del cover ottimo, indipendente da quello basato sul matching. 
+Terzo, un solver maturo e ampiamente validato costituisce un \textit{oracolo indipendente}: 
+confrontare l'output del branch-and-bound implementato in questa tesina con quello di Gurobi 
+sulle stesse istanze permette di validarne empiricamente la correttezza.
 
 \textbf{Formulazione:}
 

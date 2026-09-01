@@ -1,13 +1,13 @@
 \chapter{Ambiente di test}
 
 
-Questa sezione descrive come i quattro approcci presentati nel Capitolo 1 sono stati effettivamente implementati: la 2-approssimazione, l'euristica greedy e il branch-and-bound in C++, e la formulazione a programmazione lineare intera risolta con Gurobi in Python. Prima di entrare nel dettaglio di ciascun algoritmo, descriviamo la struttura dati condivisa su cui operano.
+Questa sezione descrive come i cinque approcci presentati nel Capitolo~\ref{capitolo1} sono stati effettivamente implementati: la 2-approssimazione, l'euristica greedy, la forza bruta e il branch-and-bound in C++, e la formulazione a programmazione lineare intera risolta con Gurobi in Python. Prima di entrare nel dettaglio di ciascun algoritmo, descriviamo la struttura dati condivisa su cui operano.
 
 \section{Struttura dati}
 
-Il grafo è rappresentato tramite \textbf{lista di adiacenza}, 
-la scelta naturale per i grafi sparsi tipici di questa sperimentazione: 
-una matrice di adiacenza costerebbe $O(|V|^2)$ in memoria indipendentemente 
+Il grafo è rappresentato tramite lista di adiacenza, 
+la scelta naturale per i grafi sparsi tipici di questa sperimentazione. 
+Infatti, una matrice di adiacenza costerebbe $O(|V|^2)$ in memoria indipendentemente 
 dal numero di archi, mentre la lista di adiacenza costa $O(|V|+|E|)$.
 
 \begin{lstlisting}[language=C++, caption={Rappresentazione del grafo, condivisa da tutti gli algoritmi (\texttt{data/graph.h})}]
@@ -15,14 +15,7 @@ typedef std::vector<std::vector<int>> Graph;
 // Graph[u] contiene la lista dei vicini di u
 \end{lstlisting}
 
-I dataset reali usano identificatori di nodo arbitrari e non contigui. 
-Per poter indicizzare direttamente i vettori con interi $0,\dots,n-1$, 
-il parsing (\texttt{data/utils.cpp}, funzione \texttt{readGraphFromFile}) 
-rimappa ogni id originale a un indice progressivo tramite una \texttt{unordered\_map}, 
-mantenendo il vettore inverso \texttt{idx2id} per poter ritradurre il risultato quando 
-lo si stampa o lo si scrive su file.
-
-Questa stessa struttura dati e questa stessa funzione di parsing sono condivise da 
+Questa stessa struttura dati è condivisa da 
 tutti i programmi del progetto, il che garantisce che ogni algoritmo veda esattamente 
 la stessa rappresentazione del grafo in input.
 
@@ -44,7 +37,11 @@ Ogni arco $(u,v)$ compare in \texttt{Graph} sia come vicino di $u$ sia come vici
 
 \section{Greedy Heuristic}
 
-Implementata in \texttt{src/greedy.cpp}, a partire dallo pseudocodice dell'Algoritmo~\ref{alg:greedy_vertex_cover}. A prima vista il codice sembra piuttosto diverso dallo pseudocodice, perché quest'ultimo lavora su una copia esplicita del grafo, $G' \gets$ copia di $G$, che viene via via mutata (\emph{"rimuovi $u$ e tutti gli archi incidenti a $u$ da $G'$"}); l'implementazione, invece, non copia né modifica mai \texttt{G}. La traduzione dallo pseudocodice al codice passa per due strutture ausiliarie, mantenute in parallelo per tutta l'esecuzione:
+Implementata in \texttt{src/greedy.cpp}, a partire dallo pseudocodice dell'Algoritmo~\ref{alg:greedy_vertex_cover}. 
+A prima vista il codice sembra piuttosto diverso dallo pseudocodice, perché quest'ultimo lavora su una copia esplicita del grafo, 
+$G' \gets$ copia di $G$, che viene via via mutata (\emph{"rimuovi $u$ e tutti gli archi incidenti a $u$ da $G'$"}); 
+l'implementazione, invece, non copia né modifica mai \texttt{G}. 
+La traduzione dallo pseudocodice al codice passa per due strutture ausiliarie, mantenute in parallelo per tutta l'esecuzione. 
 
 \begin{lstlisting}[language=C++, caption={Implementazione della euristica greedy (\texttt{src/greedy.cpp})}]
 vector<int> greedyVertexCover(const Graph& G) {
@@ -88,7 +85,12 @@ La selezione $u \gets \arg\max_{v} \deg(v)$, invece, resta fedele allo pseudocod
 
 \section{Brute Force}
 
-Implementata in \texttt{src/brute\_force.cpp}, traduce direttamente l'idea della Sezione~\ref{brute}: enumerare tutti i $2^n$ sottoinsiemi di vertici e restituire il più piccolo che copre ogni arco. Un sottoinsieme è rappresentato come una maschera di bit \texttt{mask}, dove il bit $i$ è acceso se e solo se il vertice $i$ appartiene al sottoinsieme — una codifica compatta che permette di iterare su tutti i $2^n$ sottoinsiemi con un semplice contatore intero, e di testare l'appartenenza di un vertice con un singolo confronto a livello di bit:
+Implementata in \texttt{src/brute\_force.cpp}, traduce direttamente l'idea della Sezione~\ref{brute}: 
+enumerare tutti i $2^n$ sottoinsiemi di vertici e restituire il più piccolo che copre ogni arco. 
+Un sottoinsieme è rappresentato come una maschera di bit \texttt{mask}, 
+dove il bit $i$ è acceso se e solo se il vertice $i$ appartiene al sottoinsieme.
+Una codifica compatta, che permette di iterare su tutti i $2^n$ sottoinsiemi con un semplice contatore intero, 
+ e di testare l'appartenenza di un vertice con un singolo confronto a livello di bit.
 
 \begin{lstlisting}[language=C++, caption={Nucleo della forza bruta (\texttt{src/brute\_force.cpp})}]
 for (int mask = 0; mask < (1 << n); mask++) {
@@ -108,15 +110,20 @@ for (int mask = 0; mask < (1 << n); mask++) {
 
 L'unica ottimizzazione rispetto all'enumerazione più ingenua è la riga di potatura in testa al ciclo: \texttt{\_\_builtin\_popcount(mask)} conta i bit accesi in \texttt{mask} (cioè la cardinalità del sottoinsieme) in una singola istruzione hardware, permettendo di scartare un sottoinsieme senza nemmeno controllare se è un cover valido, quando è già certo che non potrebbe migliorare la soluzione corrente. È però un'ottimizzazione cosmetica, non strutturale: nel caso peggiore — quando ogni sottoinsieme via via più piccolo del migliore risulta anche non valido — questa condizione non scarta nulla, e il costo resta quello dichiarato in Sezione~\ref{brute}, $O(2^n \cdot |E|)$: $2^n$ maschere da esaminare, ciascuna verificata scandendo gli $|E|$ archi del grafo.
 
-È istruttivo confrontare questa potatura con quella, ben più efficace, del branch-and-bound (Sezione~\ref{bb}): qui si scarta un singolo sottoinsieme già costruito, dopo aver comunque pagato il costo di generarlo; il branch-and-bound, invece, scarta interi sottoalberi di sottoinsiemi prima ancora di costruirli, sulla base di un lower bound calcolato sul problema residuo. È esattamente questa differenza — potare rami dello spazio di ricerca anziché singole foglie — a rendere il branch-and-bound praticabile su istanze dove la forza bruta, come mostrato nel Capitolo~3, smette di terminare in tempo ragionevole ben prima.
-
-Data la complessità esponenziale non attenuata da alcun bound reale, questa implementazione ha uno scopo puramente dimostrativo: non compare nella sperimentazione del Capitolo~3, dove il ruolo di termine di paragone esatto è affidato al confronto tra branch-and-bound e ILP/Gurobi (Sezione~\ref{ilp-impl}), l'uno perché scritto da zero in questa tesina e quindi bisognoso di validazione, l'altro perché un solver maturo può fungere da oracolo indipendente — un ruolo che la forza bruta, priva di pruning, non avrebbe comunque potuto reggere oltre le istanze più piccole.
+È interessante confrontare questa potatura con quella, ben più efficace, del branch-and-bound (Sezione~\ref{bb}). 
+Con il corrente approccio si scarta un singolo sottoinsieme già costruito, dopo aver comunque pagato il costo di generarlo.
+Il branch-and-bound, invece, scarta interi sottoalberi di sottoinsiemi prima ancora di costruirli, sulla base di un lower bound calcolato sul problema residuo. 
+È esattamente questa differenza a rendere il branch-and-bound praticabile su istanze dove la forza bruta smette di terminare in tempo ragionevole ben prima.
 
 \section{Exact Branch-and-Bound} \label{bb}
 
 Implementata in \texttt{src/exact\_branch\_and\_bound.cpp}, seguendo lo pseudocodice dell'Algoritmo~\ref{alg:branch_and_bound}. Rispetto agli algoritmi precedenti, qui la distanza tra pseudocodice e codice è maggiore, perché il primo lavora su un grafo residuo $G_{\text{residuo}}$ esplicito e passato per valore ad ogni chiamata ricorsiva, mentre il secondo condivide un unico stato mutabile tra tutte le chiamate. Questa scelta introduce più di un dettaglio delicato, sia di complessità sia di correttezza.
 
-\subsection{Grafo residuo senza copie, backtracking su due vettori} Copiare l'intera lista di adiacenza ad ogni nodo dell'albero di ricerca sarebbe proibitivo, dato che l'albero può avere fino a $O(2^n)$ nodi. Si usano invece due vettori condivisi tra tutte le chiamate ricorsive: \texttt{removed}, che gioca lo stesso ruolo di \texttt{removed}/\texttt{covered} negli altri due algoritmi (un vertice è "ancora in $G_{\text{residuo}}$" se non marcato), e \texttt{current}, che rappresenta il cover parziale $C$ dello pseudocodice lungo il cammino corrente nell'albero.
+\subsection{Grafo residuo senza copie, backtracking su due vettori} Copiare l'intera lista di adiacenza ad ogni nodo dell'albero di ricerca sarebbe proibitivo, 
+dato che l'albero può avere fino a $O(2^n)$ nodi. 
+Si usano invece due vettori condivisi tra tutte le chiamate ricorsive:
+ \texttt{removed}, che gioca lo stesso ruolo di \texttt{removed}/\texttt{covered} negli altri due algoritmi 
+ e \texttt{current} che rappresenta il cover parziale $C$ dello pseudocodice lungo il cammino corrente nell'albero.
 
 \begin{lstlisting}[language=C++, caption={Branching con backtracking su \texttt{removed} e \texttt{current} (\texttt{src/exact\_branch\_and\_bound.cpp})}]
 removed[u] = true;
@@ -126,11 +133,21 @@ current.pop_back();                // disfo l'assunzione su current
 removed[u] = false;                // disfo l'assunzione su removed
 \end{lstlisting}
 
-Il punto delicato è che, essendo entrambi i vettori condivisi (non copiati) tra le chiamate, quando la ricorsione sul ramo "includi $u$" ritorna, \texttt{removed} e \texttt{current} contengono ancora le modifiche fatte in quel sottoalbero: nessuno le toglie automaticamente. Prima di esplorare il ramo fratello "includi $v$", occorre quindi ripristinare esplicitamente lo stato precedente su \emph{entrambi} i vettori — il classico schema \emph{scegli $\to$ ricorri $\to$ disfa la scelta} del backtracking. Omettere \texttt{current.pop\_back()} (a differenza di \texttt{removed[u] = false}, che è necessario per la correttezza della potatura) produrrebbe un errore più subdolo: \texttt{current.size()} risulterebbe gonfiata in tutto il sottoalbero di $v$, causando potature premature e non corrette (la condizione del paragrafo successivo scatterebbe prima del dovuto), ed eventuali cover validi trovati in quel sottoalbero verrebbero copiati in \texttt{best} con una cardinalità falsata, quindi non più affidabile come soluzione minima.
+Essendo che entrambi i vettori sono condivisi e non copiati tra le chiamate, 
+quando la ricorsione sul ramo "includi $u$" ritorna, \texttt{removed} e \texttt{current} contengono ancora le modifiche fatte in quel sottoalbero.
+Prima di esplorare il ramo fratello "includi $v$", occorre quindi ripristinare esplicitamente lo stato precedente su \emph{entrambi} i vettori ( schema di backtracking). 
+Omettere \texttt{current.pop\_back()} produrrebbe un errore più subdolo: \texttt{current.size()} risulterebbe gonfiata in tutto il sottoalbero di $v$, causando potature premature e non corrette, ed eventuali cover validi trovati in quel sottoalbero verrebbero copiati in \texttt{best} con una cardinalità falsata, quindi non più affidabile come soluzione minima.
 
 \subsection{Selezione dell'arco} La riga "Scegli un arco $(u,v)$ da $G_{\text{residuo}}$" dello pseudocodice è implementata da \texttt{pickResidualEdge}: una scansione dei vertici non rimossi, che per ciascuno controlla i vicini fino a trovarne uno anch'esso non rimosso. Nel caso peggiore costa $O(|V|+|E|)$, ed è invocata una volta per ogni nodo dell'albero di ricerca.
 
-\subsection{Lower bound} La funzione \texttt{lowerBoundMatching} calcola un matching massimale sul grafo residuo con la stessa logica di \texttt{approxVertexCover}, ma restituisce la cardinalità $|M|$ del matching stesso, \emph{non} $2|M|$. È un punto delicato: il Teorema~\ref{aprxteorem} garantisce $|M| \le |C^*|$, quindi $|M|$ è un lower bound valido per il numero di vertici ancora necessari a coprire $G_{\text{residuo}}$; usare $2|M|$ (la dimensione del cover 2-approssimato) sovrastimerebbe il costo residuo e causerebbe una potatura scorretta, capace di scartare rami che contengono la soluzione ottima. Come \texttt{approxVertexCover}, anche questa funzione costa $O(|V|+|E|)$, ed è anch'essa invocata ad ogni nodo.
+\subsection{Lower bound} La funzione \texttt{lowerBoundMatching} calcola un matching massimale 
+sul grafo residuo con la stessa logica di \texttt{approxVertexCover}, 
+ma restituisce la cardinalità $|M|$ del matching stesso, \emph{non} $2|M|$. 
+Infatti, il Teorema~\ref{aprxteorem} garantisce $|M| \le |C^*|$, quindi $|M|$ è un lower bound valido 
+per il numero di vertici ancora necessari a coprire $G_{\text{residuo}}$; usare $2|M|$ sovrastimerebbe il costo residuo e causerebbe una potatura scorretta, 
+capace di scartare rami che contengono la soluzione ottima. 
+Come \texttt{approxVertexCover}, anche questa funzione costa $O(|V|+|E|)$, 
+ed è anch'essa invocata ad ogni nodo.
 
 \subsection{Correttezza della potatura} La condizione \texttt{current.size() + lowerBoundMatching(...) >= best.size()} usa \emph{maggiore o uguale}, non stretto maggiore. Questo è intenzionale, e la sua correttezza si giustifica così: finché \texttt{best.size()} $>$ OPT (la cardinalità ottima), qualunque ramo dell'albero che contenga una soluzione ottima soddisfa \texttt{current.size()+lowerBound} $\le$ OPT $<$ \texttt{best.size()}, quindi non incontra mai questa condizione e non viene mai scartato. I soli rami tagliati dall'uguaglianza sono quelli che, nella migliore delle ipotesi, potrebbero eguagliare (non migliorare) una soluzione già trovata: since non serve trovare tutte le soluzioni ottime ma una sola, questa potatura non fa mai perdere l'ottimo, solo cammini ridondanti verso di esso.
 

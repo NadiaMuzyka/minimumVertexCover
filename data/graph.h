@@ -26,12 +26,24 @@ void writeGraphToFile(const Graph& G, const std::string& path);
 Graph generateErdosRenyi(int n, double p, unsigned seed);
 Graph generateErdosRenyiByAvgDegree(int n, double avgDegree, unsigned seed);
 
+// Stesso modello G(n,p) di generateErdosRenyi, ma O(n + m) invece di
+// O(n^2): salta direttamente da un arco al successivo (Batagelj & Brandes,
+// 2005) invece di testare ogni coppia. Utile quando n e' grande, specie
+// sui grafi sparsi (dove generateErdosRenyi resta O(n^2) per costruire il
+// grafo anche se gli archi effettivi sono pochi). Consuma il generatore
+// casuale in modo diverso da generateErdosRenyi: stesso seed, grafo
+// diverso -- non intercambiabili ai fini della riproducibilita'.
+Graph generateErdosRenyiFast(int n, double p, unsigned seed);
+Graph generateErdosRenyiFastByAvgDegree(int n, double avgDegree, unsigned seed);
+
 
 // --- Algoritmi (staranno nei rispettivi .cpp) ---
 std::vector<int> approxVertexCover(const Graph& G);
 std::vector<int> greedyVertexCover(const Graph& G);
 std::vector<int> exactVertexCover(const Graph& G);
 std::vector<int> bruteForceVertexCover(const Graph& G);
+
+bool isValidCover(const Graph& G, const std::vector<int>& cover);
 
 
 // Variante strumentata del branch-and-bound: espone nodi esplorati (per
