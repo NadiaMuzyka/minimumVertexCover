@@ -17,19 +17,14 @@
 \contentsline {section}{\numberline {2.3}Greedy Heuristic}{11}{section.2.3}%
 \contentsline {section}{\numberline {2.4}Brute Force}{12}{section.2.4}%
 \contentsline {section}{\numberline {2.5}Exact Branch-and-Bound}{13}{section.2.5}%
-\contentsline {subsection}{\numberline {2.5.1}Grafo residuo senza copie, backtracking su due vettori}{14}{subsection.2.5.1}%
-\contentsline {subsection}{\numberline {2.5.2}Selezione dell'arco}{14}{subsection.2.5.2}%
-\contentsline {subsection}{\numberline {2.5.3}Lower bound}{14}{subsection.2.5.3}%
-\contentsline {subsection}{\numberline {2.5.4}Correttezza della potatura}{15}{subsection.2.5.4}%
-\contentsline {subsection}{\numberline {2.5.5}Completezza del branching}{15}{subsection.2.5.5}%
-\contentsline {subsection}{\numberline {2.5.6}Upper bound iniziale}{15}{subsection.2.5.6}%
-\contentsline {subsection}{\numberline {2.5.7}Timeout di sicurezza}{15}{subsection.2.5.7}%
-\contentsline {subsection}{\numberline {2.5.8}Costo per nodo e complessità totale}{15}{subsection.2.5.8}%
-\contentsline {section}{\numberline {2.6}Formulazione ILP e risoluzione con Gurobi}{16}{section.2.6}%
-\contentsline {subsection}{\numberline {2.6.1}Dalla formulazione al codice.}{16}{subsection.2.6.1}%
+\contentsline {subsection}{\numberline {2.5.1}Rappresentazione dello stato e selezione dell'arco}{14}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.2}Bound e correttezza del branching}{14}{subsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.5.3}Terminazione e complessità}{15}{subsection.2.5.3}%
+\contentsline {section}{\numberline {2.6}Formulazione ILP e risoluzione con Gurobi}{15}{section.2.6}%
+\contentsline {subsection}{\numberline {2.6.1}Dalla formulazione al codice.}{15}{subsection.2.6.1}%
 \contentsline {subsection}{\numberline {2.6.2}Limite di tempo e stato della soluzione.}{16}{subsection.2.6.2}%
-\contentsline {subsection}{\numberline {2.6.3}Perché il linguaggio non incide sul confronto dei tempi.}{17}{subsection.2.6.3}%
-\contentsline {subsection}{\numberline {2.6.4}Perché confrontare con un secondo metodo esatto.}{17}{subsection.2.6.4}%
+\contentsline {subsection}{\numberline {2.6.3}Perché il linguaggio non incide sul confronto dei tempi.}{16}{subsection.2.6.3}%
+\contentsline {subsection}{\numberline {2.6.4}Perché confrontare con un secondo metodo esatto.}{16}{subsection.2.6.4}%
 \contentsline {chapter}{\numberline {3}Il dataset sperimentale}{18}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Perché un generatore}{18}{section.3.1}%
 \contentsline {section}{\numberline {3.2}Il modello Erdos-Renyi $G(n,p)$}{19}{section.3.2}%
@@ -43,3 +38,25 @@
 \contentsline {section}{\numberline {4.2}Primo tentativo: un bug nella forza bruta}{22}{section.4.2}%
 \contentsline {section}{\numberline {4.3}Secondo tentativo: risultati}{23}{section.4.3}%
 \contentsline {section}{\numberline {4.4}Prestazioni}{24}{section.4.4}%
+\contentsline {chapter}{\numberline {5}Sperimentazione}{27}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Impostazione comune agli esperimenti}{27}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Esperimento 1: il limite pratico del Branch-and-Bound}{27}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Obiettivo}{28}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Metodologia}{28}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Risultati}{28}{subsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.2.4}Discussione}{29}{subsection.5.2.4}%
+\contentsline {section}{\numberline {5.3}Esperimento 2: il limite pratico dell'ILP}{29}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Obiettivo}{29}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}Metodologia}{29}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Risultati}{29}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}Discussione}{30}{subsection.5.3.4}%
+\contentsline {section}{\numberline {5.4}Esperimento 3: l'andamento di 2-approssimato e greedy}{30}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Obiettivo}{30}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Metodologia}{31}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.3}Risultati}{31}{subsection.5.4.3}%
+\contentsline {subsection}{\numberline {5.4.4}Discussione}{33}{subsection.5.4.4}%
+\contentsline {section}{\numberline {5.5}Esperimento 4: la qualità di 2-approssimato e greedy}{33}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Obiettivo}{33}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Metodologia}{33}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}Risultati}{33}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}Discussione}{35}{subsection.5.5.4}%

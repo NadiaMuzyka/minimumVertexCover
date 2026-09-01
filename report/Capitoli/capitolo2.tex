@@ -117,13 +117,20 @@ Il branch-and-bound, invece, scarta interi sottoalberi di sottoinsiemi prima anc
 
 \section{Exact Branch-and-Bound} \label{bb}
 
-Implementata in \texttt{src/exact\_branch\_and\_bound.cpp}, seguendo lo pseudocodice dell'Algoritmo~\ref{alg:branch_and_bound}. Rispetto agli algoritmi precedenti, qui la distanza tra pseudocodice e codice è maggiore, perché il primo lavora su un grafo residuo $G_{\text{residuo}}$ esplicito e passato per valore ad ogni chiamata ricorsiva, mentre il secondo condivide un unico stato mutabile tra tutte le chiamate. Questa scelta introduce più di un dettaglio delicato, sia di complessità sia di correttezza.
+Implementata in \texttt{src/exact\_branch\_and\_bound.cpp}, 
+seguendo lo pseudocodice dell'Algoritmo~\ref{alg:branch_and_bound}. 
+Qui la distanza tra pseudocodice e codice è maggiore che negli algoritmi 
+precedenti: il primo lavora su un grafo residuo $G_{\text{residuo}}$ esplicito, 
+copiato per valore ad ogni chiamata ricorsiva, mentre il secondo condivide un 
+unico stato mutabile tra tutte le chiamate. Questa scelta introduce alcuni dettagli delicati, 
+sia di correttezza sia di complessità, discussi qui di seguito.
 
-\subsection{Grafo residuo senza copie, backtracking su due vettori} Copiare l'intera lista di adiacenza ad ogni nodo dell'albero di ricerca sarebbe proibitivo, 
-dato che l'albero può avere fino a $O(2^n)$ nodi. 
-Si usano invece due vettori condivisi tra tutte le chiamate ricorsive:
- \texttt{removed}, che gioca lo stesso ruolo di \texttt{removed}/\texttt{covered} negli altri due algoritmi 
- e \texttt{current} che rappresenta il cover parziale $C$ dello pseudocodice lungo il cammino corrente nell'albero.
+\subsection{Rappresentazione dello stato e selezione dell'arco} Copiare l'intera lista di adiacenza 
+ad ogni nodo dell'albero di ricerca sarebbe proibitivo, 
+dato che l'albero può avere fino a $O(2^n)$ nodi. Al suo posto si usano due vettori condivisi 
+tra tutte le chiamate ricorsive: \texttt{removed}, che gioca lo stesso ruolo di \texttt{removed}/\texttt{covered} 
+negli altri due algoritmi, e \texttt{current}, che rappresenta il cover parziale $C$ 
+dello pseudocodice lungo il cammino corrente nell'albero.
 
 \begin{lstlisting}[language=C++, caption={Branching con backtracking su \texttt{removed} e \texttt{current} (\texttt{src/exact\_branch\_and\_bound.cpp})}]
 removed[u] = true;
@@ -133,31 +140,37 @@ current.pop_back();                // disfo l'assunzione su current
 removed[u] = false;                // disfo l'assunzione su removed
 \end{lstlisting}
 
-Essendo che entrambi i vettori sono condivisi e non copiati tra le chiamate, 
-quando la ricorsione sul ramo "includi $u$" ritorna, \texttt{removed} e \texttt{current} contengono ancora le modifiche fatte in quel sottoalbero.
-Prima di esplorare il ramo fratello "includi $v$", occorre quindi ripristinare esplicitamente lo stato precedente su \emph{entrambi} i vettori ( schema di backtracking). 
-Omettere \texttt{current.pop\_back()} produrrebbe un errore più subdolo: \texttt{current.size()} risulterebbe gonfiata in tutto il sottoalbero di $v$, causando potature premature e non corrette, ed eventuali cover validi trovati in quel sottoalbero verrebbero copiati in \texttt{best} con una cardinalità falsata, quindi non più affidabile come soluzione minima.
+Poiché entrambi i vettori sono condivisi e non copiati tra le chiamate, 
+quando la ricorsione sul ramo "includi $u$" ritorna, 
+\texttt{removed} e \texttt{current} contengono ancora le modifiche fatte in quel sottoalbero. 
+Prima di esplorare il ramo fratello "includi $v$" occorre quindi ripristinare esplicitamente 
+lo stato precedente su entrambi i vettori.
+Omettere \texttt{current.pop\_back()} produrrebbe un errore più subdolo. 
+\texttt{current.size()} risulterebbe gonfiata in tutto il sottoalbero di $v$, 
+causando potature premature e scorrette, e ogni cover valido trovato in quel sottoalbero 
+verrebbe copiato in \texttt{best} con una cardinalità falsata, non più affidabile come soluzione minima.
 
-\subsection{Selezione dell'arco} La riga "Scegli un arco $(u,v)$ da $G_{\text{residuo}}$" dello pseudocodice è implementata da \texttt{pickResidualEdge}: una scansione dei vertici non rimossi, che per ciascuno controlla i vicini fino a trovarne uno anch'esso non rimosso. Nel caso peggiore costa $O(|V|+|E|)$, ed è invocata una volta per ogni nodo dell'albero di ricerca.
+Un secondo dettaglio riguarda la scelta dell'arco su cui ramificare. 
+La riga "Scegli un arco $(u,v)$ da $G_{\text{residuo}}$" dello pseudocodice è implementata da 
+\texttt{pickResidualEdge}: una scansione dei vertici non rimossi che, per ciascuno, 
+controlla i vicini fino a trovarne uno anch'esso non rimosso. 
+Nel caso peggiore costa $O(|V|+|E|)$, ed è invocata una volta per ogni nodo dell'albero di ricerca.
 
-\subsection{Lower bound} La funzione \texttt{lowerBoundMatching} calcola un matching massimale 
-sul grafo residuo con la stessa logica di \texttt{approxVertexCover}, 
-ma restituisce la cardinalità $|M|$ del matching stesso, \emph{non} $2|M|$. 
-Infatti, il Teorema~\ref{aprxteorem} garantisce $|M| \le |C^*|$, quindi $|M|$ è un lower bound valido 
-per il numero di vertici ancora necessari a coprire $G_{\text{residuo}}$; usare $2|M|$ sovrastimerebbe il costo residuo e causerebbe una potatura scorretta, 
-capace di scartare rami che contengono la soluzione ottima. 
-Come \texttt{approxVertexCover}, anche questa funzione costa $O(|V|+|E|)$, 
-ed è anch'essa invocata ad ogni nodo.
+\subsection{Bound e correttezza del branching} Il lower bound usato per potare l'albero è calcolato 
+da \texttt{lowerBoundMatching}, che trova un matching massimale sul grafo residuo con la stessa 
+logica di \texttt{approxVertexCover}.
 
-\subsection{Correttezza della potatura} La condizione \texttt{current.size() + lowerBoundMatching(...) >= best.size()} usa \emph{maggiore o uguale}, non stretto maggiore. Questo è intenzionale, e la sua correttezza si giustifica così: finché \texttt{best.size()} $>$ OPT (la cardinalità ottima), qualunque ramo dell'albero che contenga una soluzione ottima soddisfa \texttt{current.size()+lowerBound} $\le$ OPT $<$ \texttt{best.size()}, quindi non incontra mai questa condizione e non viene mai scartato. I soli rami tagliati dall'uguaglianza sono quelli che, nella migliore delle ipotesi, potrebbero eguagliare (non migliorare) una soluzione già trovata: since non serve trovare tutte le soluzioni ottime ma una sola, questa potatura non fa mai perdere l'ottimo, solo cammini ridondanti verso di esso.
+Su questo lower bound si basa la condizione di potatura \texttt{current.size() + lowerBoundMatching(...) >= best.size()}, la stessa già presente nello pseudocodice del Capitolo 1.
 
-\subsection{Completezza del branching} Per ogni arco residuo $(u,v)$, ogni cover valido deve contenere $u$ o $v$ (o entrambi), altrimenti quell'arco resterebbe scoperto. Il ramo "includi $u$" esplora \emph{tutte} le cover che contengono $u$ (comprese quelle che contengono anche $v$, se un arco successivo lo richiede), e il ramo "includi $v$" esplora tutte quelle che contengono $v$: l'unione dei due copre quindi l'intero spazio delle cover valide, senza perderne nessuna. I due rami si sovrappongono parzialmente (una cover con entrambi $u,v$ è raggiungibile da entrambi), il che è meno efficiente di uno schema mutuamente esclusivo ma resta corretto — coerente con la complessità $O(2^n)$ dichiarata nel Capitolo 1, che non assume alcuna ottimizzazione di tipo FPT sul branching.
+Il branching è a sua volta completo. Infatti, per ogni arco residuo $(u,v)$, ogni cover valido deve contenere $u$ o $v$ (o entrambi), altrimenti quell'arco resterebbe scoperto. 
 
-\subsection{Upper bound iniziale} Lo pseudocodice teorico inizializza $\textit{best} \gets V$ (l'intero insieme dei vertici). In pratica si inizializza \texttt{best} con il risultato di \texttt{greedyVertexCover(G)}: un upper bound iniziale molto più stretto rende la condizione di potatura efficace fin dalla radice dell'albero, riducendo drasticamente i nodi esplorati rispetto a partire da un upper bound banale.
+Infine, mentre lo pseudocodice teorico inizializza $\textit{best} \gets V$ (l'intero insieme dei vertici), in pratica \texttt{best} parte dal risultato di \texttt{greedyVertexCover(G)} piuttosto che da quello del 2-approssimato, pur essendo quest'ultimo l'unico dei due a offrire una garanzia teorica ($\le 2|C^*|$). La scelta si basa su un'aspettativa teorica: il 2-approssimato include sempre entrambi gli estremi di ogni arco del matching, indipendentemente dal loro grado effettivo, mentre il greedy sceglie ad ogni passo il vertice che copre il maggior numero di archi residui, adattandosi alla struttura del grafo. Ci si aspetta quindi che produca cover più vicine all'ottimo pur senza garantirlo formalmente — aspettativa poi confermata sperimentalmente. Un upper bound iniziale più stretto rende comunque la potatura efficace già dalla radice dell'albero, riducendo drasticamente i nodi esplorati rispetto a partire da un upper bound banale.
 
-\subsection{Timeout di sicurezza} Poiché nel caso peggiore l'algoritmo è esponenziale, la funzione strumentata \texttt{exact\-Vertex\-Cover\-Stats} accetta un limite di tempo (default 30 secondi): superato il limite, la ricorsione si interrompe e viene restituita la migliore soluzione trovata fino a quel momento, marcata come non necessariamente ottima. La stessa funzione restituisce anche il numero di nodi dell'albero di ricerca effettivamente esplorati, usato nel Capitolo~3 per quantificare l'effetto della potatura rispetto al limite teorico.
+\subsection{Terminazione e complessità} 
+Poiché nel caso peggiore l'algoritmo è esponenziale, la funzione strumentata \texttt{exact\-Vertex\-Cover\-Stats} 
+accetta un limite di tempo. Superato il limite, la ricorsione si interrompe e restituisce la migliore soluzione trovata fino a quel momento, marcata come non necessariamente ottima. La stessa funzione restituisce anche il numero di nodi dell'albero effettivamente esplorati, usato nel Capitolo~3 per quantificare l'effetto della potatura rispetto al limite teorico.
 
-\subsection{Costo per nodo e complessità totale} Ogni nodo dell'albero esegue \texttt{pickResidualEdge} e \texttt{lowerBoundMatching}, entrambe $O(|V|+|E|)$: il costo per nodo è quindi $O(|V|+|E|)$. Nel caso peggiore, quando la potatura non elimina alcun ramo, l'albero ha $O(2^n)$ nodi, per una complessità totale $O(2^n \cdot (|V|+|E|))$ — coerente con il bound $O(2^n \cdot |E|)$ dimostrato nel Capitolo 1 (a meno del termine $|V|$, dominato da $|E|$ nei grafi non banalmente sparsi). Nella pratica, come discusso, la potatura riduce drasticamente il numero di nodi effettivamente visitati rispetto a questo caso peggiore.
+Ogni nodo dell'albero esegue \texttt{pickResidualEdge} e \texttt{lowerBoundMatching}, entrambe $O(|V|+|E|)$: il costo per nodo è quindi $O(|V|+|E|)$. Nel caso peggiore, quando la potatura non elimina alcun ramo, l'albero ha $O(2^n)$ nodi, per una complessità totale $O(2^n \cdot (|V|+|E|))$ — coerente con il bound $O(2^n \cdot |E|)$ del Capitolo 1 (a meno del termine $|V|$, dominato da $|E|$ nei grafi non banalmente sparsi). Nella pratica, come discusso, la potatura riduce drasticamente il numero di nodi effettivamente visitati rispetto a questo caso peggiore.
 
 \section{Formulazione ILP e risoluzione con Gurobi} \label{ilp-impl}
 

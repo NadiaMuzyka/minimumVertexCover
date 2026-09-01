@@ -1,0 +1,253 @@
+\chapter{Sperimentazione}
+
+Questo capitolo presenta la sperimentazione vera e propria, 
+condotta dopo il pilot del Capitolo~4. 
+Prima di entrare nel primo esperimento, vale la pena fissare la metodologia 
+comune a tutti quelli che seguono, per non doverla ripetere identica in ogni sezione.
+
+\section{Impostazione comune agli esperimenti}
+
+Tutti gli esperimenti di questo capitolo, tranne l'ultimo, condividono la stessa tecnica 
+di base per decidere quali dimensioni $n$ testare, ovvero il doubling experiment, già introdotto 
+nel pilot. Si parte da un $n_0$ piccolo e si raddoppia ad ogni passo, 
+invece di fissare a tavolino una lista di valori. 
+Rispetto al pilot, però, qui il criterio di stop diventa parte integrante del disegno 
+sperimentale, non solo un modo per contenere i tempi. Per gli esperimenti che cercano 
+un \emph{muro}, cioè dove un metodo esatto smette di essere praticabile, 
+il raddoppio continua finché non si osserva il primo timeout, dopo di che si esegue un 
+passo di raddoppio aggiuntivo a titolo di conferma, e ci si ferma. Questo evita sia 
+di fermarsi su un timeout isolato (che potrebbe essere un caso limite) sia di continuare 
+a raddoppiare ben oltre il punto in cui la risposta è ormai chiara.
+
+Un secondo elemento comune è il timeout, fissato a 120 secondi per tutti i metodi
+ esatti (Branch-and-Bound, ILP). Non è un dettaglio implementativo lasciato implicito: è una scelta metodologica dichiarata esplicitamente. 
+Un timeout non dichiarato renderebbe i risultati non riproducibili da chi legge.
+
+Infine, ogni design point viene ripetuto su n seed diversi, non su una singola istanza. 
+Serve a distinguere un comportamento sistematico da un caso isolato dovuto al singolo grafo generato -- cosa che, come si vedrà nell'Esperimento 1, fa davvero la differenza.
+
+\section{Esperimento 1: il limite pratico del Branch-and-Bound}
+
+\subsection{Obiettivo}
+
+Il pilot (Capitolo~4) aveva già mostrato che la forza bruta è nettamente esponenziale, 
+ed è stata per questo esclusa dalla campagna sperimentale vera e propria. 
+Restava però una domanda aperta sul Branch-and-Bound. 
+Il pilot suggeriva che si comportasse meglio della forza bruta, 
+ma comunque con un andamento vicino all'esponenziale, coerente con la teoria del Capitolo~1, dove B\&B e forza bruta condividono la stessa complessità 
+nel caso peggiore, $O(2^n)$, e la potatura del B\&B ne migliora la base pratica senza cambiarne la classe.
+
+L'obiettivo di questo esperimento è quindi capire fino a che punto il B\&B resta abbastanza veloce da poter essere confrontato in modo significativo con le euristiche (greedy, 2-approssimato).
+
+\subsection{Metodologia}
+
+Per ciascuna delle due densità (sparsa e densa, Capitolo~3), è stato eseguito un doubling a partire da $n_0=10$,
+con timeout di 120 secondi e 3 ripetizioni per punto, fermandosi un passo dopo il primo timeout osservato su almeno una delle tre ripetizioni.
+
+\subsection{Risultati}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{esperimeno1/muro_esponenziale.png}
+    \caption{Tempo di esecuzione del Branch-and-Bound al crescere di $n$, sparso e denso, con il timeout di 120s.}
+    \label{fig:exp1-muro}
+\end{figure}
+
+La Figura~\ref{fig:exp1-muro} mostra un andamento nettamente esponenziale su entrambe le densità, 
+come atteso, ma con un muro raggiunto a dimensioni molto diverse: sullo sparso il B\&B risolve ancora comodamente a $n=40$ (attorno a 0.1s),
+ e il primo timeout compare solo a $n=80$. Sul denso, invece, il muro arriva molto prima, già a $n=40$.
+
+Proprio a $n=40$ denso, però, i dati mostrano qualcosa di più interessante di un semplice timeout uniforme. 
+Delle tre ripetizioni allo stesso $n$, due vanno in timeout mentre la terza risolve comunque, in 43.3 secondi.
+Ciò indica che il comportamento del B\&B non è uniforme, e che la dimensione in sé non è l'unico fattore determinante. 
+Il seed può fare la differenza tra un timeout e una soluzione ottima in meno di un minuto.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{@{}lrrl@{}}
+        \toprule
+        Tempo (s) & Cardinalità & Stato \\
+        \midrule
+        120.000 & 34 & \texttt{TIME\_LIMIT} \\
+        43.293  & 33 & \texttt{OPTIMAL} \\
+        120.000 & 34 & \texttt{TIME\_LIMIT} \\
+        \bottomrule
+    \end{tabular}
+    \caption{Le tre ripetizioni a $n=40$, denso: comportamento non uniforme sullo stesso $n$.}
+    \label{tab:exp1-n40-denso}
+\end{table}
+
+\subsection{Discussione}
+
+La sperimentazione ha confermato quanto sugerito dalla teoria e l'esperimento pilota.
+Il B\&B è esponenziale, e il muro pratico cade molto prima sui grafi densi che su quelli sparsi.
+Infatti, sui grafi sparsi il B\&B resta un termine di paragone valido fino a $n\approx 40$-$60$, 
+con margine; sui grafi densi il confronto smette di essere significativo già intorno a $n\approx 30$-$40$.
+
+\section{Esperimento 2: il limite pratico dell'ILP}
+
+\subsection{Obiettivo}
+
+L'Esperimento 1 ha stabilito il muro del Branch-and-Bound, oltre i quali smette di essere un confronto sensato con le euristiche. 
+Ci poniamo la stessa domanda per l'ILP. Ovvero, fino a che dimensione $n$ l'ILP resta un termine di paragone utile per le euristiche, e se il muro cade prima o dopo rispetto al B\&B.
+
+\subsection{Metodologia}
+
+Stessa impostazione dell'Esperimento 1. doubling da $n_0=10$, timeout di 120 secondi, 3 ripetizioni per punto, 
+stop un passo dopo il primo timeout. 
+\subsection{Risultati}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{esperimento2/muro_esponenziale.png}
+    \caption{Tempo di esecuzione dell'ILP al crescere di $n$, sparso e denso, con il timeout di 120s.}
+    \label{fig:exp2-muro}
+\end{figure}
+
+La Figura~\ref{fig:exp2-muro} mostra un risultato molto diverso da quello del B\&B: il muro cade esattamente allo stesso $n=320$ su entrambe le densità, confermato al passo successivo. Non solo il muro coincide, ma anche le traiettorie di crescita restano vicine per tutto il range risolto. 
+A $n=160$, ad esempio, il tempo medio è di circa 4.5 secondi sullo sparso e 6.4 sul denso. 
+Stesso ordine di grandezza, a differenza della separazione netta vista nell'Esperimento 1.
+
+\subsection{Discussione}
+
+Il confronto con l'Esperimento 1 è diretto: il B\&B smette di essere un termine di paragone utile già a $n\approx 40$-$80$, mentre l'ILP resta praticabile fino a $n\approx 200$, quasi un ordine di grandezza più in là. 
+Ma il dato più interessante non è solo quanto più lontano sia il muro dell'ILP, 
+è che la densità del grafo, che per il B\&B faceva una differenza enorme, qui non sembra avere quasi nessun effetto. 
+Il motore di Gurobi raggiunge lo stesso limite pratico indipendentemente da quanto il grafo sia sparso o denso. 
+È un'indicazione che il vantaggio dell'ILP non viene da una gestione più furba della densità in sé, ma da un rilassamento LP che resta stringente su entrambi i regimi, 
+a differenza del lower bound basato su matching del B\&B, che si comporta diversamente a seconda della struttura del grafo.
+
+Per gli esperimenti di qualità più avanti in questo capitolo, questo risultato ha una conseguenza pratica diretta. 
+Usare l'ILP come riferimento di verità fino a $n=200$ (il range scelto per quegli esperimenti) resta ampiamente dentro la zona sicura, 
+con un margine di oltre $100$ nodi prima del muro osservato.
+
+\section{Esperimento 3: l'andamento di 2-approssimato e greedy}
+
+\subsection{Obiettivo}
+
+Gli Esperimenti 1 e 2 hanno caratterizzato il limite pratico dei due metodi esatti. 
+Per le euristiche il problema è diverso: 2-approssimato e greedy sono polinomiali per costruzione (rispettivamente $O(|V|+|E|)$ e $O(|V|^2+|E|)$) e non presentano un muro paragonabile. 
+L'obiettivo qui non è quindi trovare un limite, ma verificare empiricamente che l'andamento osservato corrisponda davvero a quello previsto dalla teoria e con quale esponente polinomiale, 
+dato che le due complessità teoriche predicono comportamenti diversi tra loro e diversi tra le due densità.
+
+\subsection{Metodologia}
+
+Poiché non c'è un evento (un timeout) su cui fermarsi, il criterio di stop cambia rispetto agli Esperimenti 1 e 2.
+Si continua a raddoppiare $n$ finché il rapporto tra il tempo medio a $2n$ e quello a $n$ non si stabilizza. 
+Cioè finché le ultime misurazioni consecutive non restano entro una tolleranza relativa del 25\% l'una dall'altra. 
+Un rapporto stabile è il segnale che la forma della crescita è stata riconosciuta: vicino a 2 indica un andamento lineare, vicino a 4 quadratico, e così via, raddoppiando $n$.
+
+Sono stati necessari due accorgimenti pratici prima che l'esperimento fosse eseguibile in tempi ragionevoli.
+
+Il primo riguarda il generatore di grafi. 
+Quello condiviso con il resto del progetto (Capitolo~3) verifica ogni singola coppia di vertici indipendentemente dalla densità richiesta, 
+quindi ha costo $O(n^2)$ anche quando il grafo risultante è sparso e ha pochi archi. 
+Per un esperimento che deve raddoppiare $n$ ripetutamente fino a decine di migliaia di nodi, questo costo di generazione diventava il vero collo di bottiglia. 
+È stato quindi introdotto un secondo generatore, con la stessa distribuzione $G(n,p)$ ma costo $O(n+m)$: 
+invece di testare ogni coppia, salta direttamente da un arco al successivo campionando la distanza da una distribuzione geometrica. 
+
+Il secondo accorgimento è stato separare l'esperimento in due esecuzioni indipendenti, una per il 2-approssimato e una per il greedy, invece di misurarli nello stesso ciclo di raddoppio. 
+La ragione è che le due euristiche hanno complessità molto diverse. Usare lo stesso range di $n$ per entrambe avrebbe significato o fermare troppo presto il 2-approssimato (che stabilizza rapidamente) o far proseguire il greedy ben oltre il necessario, con un costo computazionale sproporzionato dato il suo termine quadratico dominante.
+
+
+\subsection{Risultati}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{esperimento3/approx_time.png}
+    \caption{Tempo del 2-approssimato al crescere di $n$, scala log-log, sparso e denso.}
+    \label{fig:exp3-approx}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{esperimento3/greedy_time.png}
+    \caption{Tempo del greedy al crescere di $n$, scala log-log, sparso e denso.}
+    \label{fig:exp3-greedy}
+\end{figure}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{@{}llrrl@{}}
+        \toprule
+        Algoritmo & Densità & Range di $n$ testato & Pendenza log-log & Fermato per \\
+        \midrule
+        2-approx & sparso & 1000--16000 & 0.97 & stabilizzazione ($n=16000$) \\
+        2-approx & denso  & 1000--16000 & 1.70 & tetto sugli archi \\
+        greedy   & sparso & 1000--64000 & 2.13 & tetto su $n$ \\
+        greedy   & denso  & 1000--16000 & 2.08 & tetto sugli archi \\
+        \bottomrule
+    \end{tabular}
+    \caption{Pendenza stimata (regressione log-log) e motivo di arresto per ciascuna combinazione.}
+    \label{tab:exp3-pendenze}
+\end{table}
+
+Il caso più pulito è il 2-approssimato sullo sparso. 
+Si stabilizza correttamente entro la tolleranza a $n=16000$, con una pendenza di 0.97 sostanzialmente lineare, coerente con $O(|V|+|E|)$ quando $|E|\sim n\log n$. 
+
+Negli altri tre casi (2-approssimato denso, greedy sparso, greedy denso) l'esperimento si è fermato per una delle valvole di sicurezza prima di soddisfare formalmente il criterio di stabilizzazione. 
+Ad esempio, sul 2-approssimato denso l'ultimo rapporto disponibile (4.01) si discosta del 31\% dal precedente, appena sopra la soglia del 25\%. Il segnale resta comunque chiaro anche senza una stabilizzazione formale: la pendenza del greedy, sia sparso (2.13) che denso (2.08), è vicina a 2 in entrambi i casi e coerente con il termine $O(|V|^2)$ che, per costruzione, domina indipendentemente dalla densità del grafo (Capitolo~1). 
+
+Il 2-approssimato sul denso mostra una pendenza intermedia (1.70), meno netta ma comunque ben lontana dal comportamento lineare dello sparso, in direzione di $O(n^2)$ come atteso quando $|E|\sim n^2/4$ domina su $|V|$.
+
+\subsection{Discussione}
+
+I risultati confermano, con vari gradi di nettezza, le complessità teoriche del Capitolo~1. 
+Il 2-approssimato si comporta in modo sostanzialmente diverso tra le due densità (quasi lineare sullo sparso, tendente al quadratico sul denso). 
+Mentre il greedy resta quadratico in entrambi i casi, la conseguenza diretta di un termine $O(|V|^2)$ che non dipende da quanti archi il grafo abbia davvero. 
+È lo stesso motivo, notato già nel confrontare i due algoritmi, per cui il greedy costa sistematicamente di più del 2-approssimato a parità di $n$, pur restando sempre praticabile su tutto il range testato, senza mai avvicinarsi a un muro.
+
+\section{Esperimento 4: la qualità di 2-approssimato e greedy}
+
+\subsection{Obiettivo}
+
+Questo esperimento vuole capire di quanto si discostano l'algoritmo 2-approssimato e greedy. 
+L'Esperimento 2 ha già stabilito che il muro dell'ILP si trova a $n=320$: il range scelto per questo esperimento resta ampiamente al di sotto di quella soglia, quindi l'ILP può essere usato come verità di riferimento senza il rischio che vada in timeout.
+
+\subsection{Metodologia}
+
+A differenza dei tre esperimenti precedenti, qui non serve una logica adattiva. 
+Il disegno è una griglia fissa di $n=10,20,\dots$ con passo 10, sparso e denso, 5 ripetizioni per punto. 
+Per ciascun grafo generato vengono eseguiti tutti e tre gli algoritmi (2-approssimato, greedy in-process e ILP) e la cardinalità dell'ILP viene presa come ottimo di riferimento per calcolare il rapporto degli altri due.
+
+\subsection{Risultati}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{esperimento4/ratio_sparse.png}
+    \caption{Rapporto cardinalità/OPT di 2-approssimato e greedy -- grafi sparsi.}
+    \label{fig:exp4-ratio-sparse}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{esperimento4/ratio_dense.png}
+    \caption{Rapporto cardinalità/OPT di 2-approssimato e greedy -- grafi densi.}
+    \label{fig:exp4-ratio-dense}
+\end{figure}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{@{}llrrrr@{}}
+        \toprule
+        Algoritmo & Densità & Media & Minimo & Massimo & Dev. std. \\
+        \midrule
+        2-approx & sparso & 1.366 & 1.211 & 1.667 & 0.073 \\
+        2-approx & denso  & 1.136 & 1.047 & 1.667 & 0.130 \\
+        greedy   & sparso & 1.042 & 1.000 & 1.114 & 0.028 \\
+        greedy   & denso  & 1.018 & 1.000 & 1.067 & 0.015 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Rapporto cardinalità/OPT, statistiche su tutte le $n$ e ripetizioni.}
+    \label{tab:exp4-ratio}
+\end{table}
+
+Il \textbf{greedy} resta sistematicamente vicino all'ottimo su tutto il range testato, su entrambe le densità: media 1.018 sul denso e 1.042 sullo sparso, con deviazione standard sotto lo 0.03 in entrambi i casi -- non solo è vicino all'ottimo, lo è in modo consistente, senza oscillazioni marcate al variare di $n$. Il \textbf{2-approssimato} resta sempre ben al di sotto del bound teorico di 2 (il valore massimo osservato, 1.667, è lo stesso su entrambe le densità), ma con un margine molto più ampio dall'ottimo rispetto al greedy.
+
+Un risultato che a prima vista sorprende: il 2-approssimato ha un rapporto medio \emph{migliore} sui grafi densi (1.136) che su quelli sparsi (1.366), pur con una variabilità maggiore (deviazione standard 0.130 contro 0.073). Sui grafi densi, dove ogni vertice ha molti più archi da coprire, un matching massimale tende ad "azzeccare" più spesso coppie di vertici che fanno parte anche di una soluzione vicina all'ottimo; sui grafi sparsi, dove gli archi sono pochi rispetto a $n$, un singolo abbinamento sub-ottimale nel matching pesa proporzionalmente di più sul risultato finale.
+
+Sul fronte dei tempi, la differenza con l'ILP resta enorme per tutto il range: a $n=180$, il valore più alto testato, l'ILP impiega in media 9.6 secondi sul denso e 13.3 sullo sparso, contro tempi del 2-approssimato e del greedy che restano nell'ordine del millisecondo o meno -- una conferma diretta di quanto già visto negli Esperimenti 1-3.
+
+\subsection{Discussione}
+
+Questo esperimento chiude il cerchio aperto da RQ3 e RQ4. Su RQ4 (il bound teorico del 2-approssimato tiene empiricamente?): sì, senza eccezioni, su 540 istanze il rapporto non supera mai 1.667, ben al di sotto del limite di 2 dimostrato nel Capitolo~1. Su RQ3 (quale euristica è più vicina all'ottimo, e quale più veloce?): il greedy vince nettamente sulla qualità, restando entro pochi punti percentuali dall'ottimo in modo consistente; sulla velocità la differenza tra i due è trascurabile rispetto al confronto con l'ILP -- entrambi restano nell'ordine del millisecondo mentre l'ILP richiede secondi. Il costo del greedy osservato nell'Esperimento 3 ($O(|V|^2+|E|)$ contro $O(|V|+|E|)$ del 2-approssimato) diventa quindi rilevante solo a dimensioni ben oltre quelle testate qui: nel range $n\le 180$, il vantaggio in qualità del greedy non ha ancora un costo pratico percepibile in termini di tempo.
