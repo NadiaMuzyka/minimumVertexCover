@@ -9,11 +9,15 @@ Prima di procedere con la campagna sperimentale vera e propria, è stato condott
 
 \section{Configurazione}
 
-Sono stati generati dieci grafi con il generatore Erdos-Renyi descritto nel Capitolo~3: cinque dimensioni ($n = 10, 15, 20, 25, 30$), ciascuna nei due livelli sparso e denso. Su ciascuno dei dieci grafi sono stati eseguiti tutti e cinque gli algoritmi: forza bruta, branch-and-bound, ILP (Gurobi), 2-approssimato e greedy.
+Sono stati generati dieci grafi con il generatore Erdos-Renyi di cinque dimensioni ($n = 10, 15, 20, 25, 30$), ciascuna nei due livelli sparso e denso. 
+Su ciascuno dei dieci grafi sono stati eseguiti tutti e cinque gli algoritmi: forza bruta, branch-and-bound, ILP (Gurobi), 2-approssimato e greedy.
 
 \section{Primo tentativo: un bug nella forza bruta}
 
-Il primo tentativo di esecuzione del pilot ha subito mostrato perché la fase pilota non è un passaggio superfluo: l'implementazione della forza bruta smetteva di funzionare correttamente in corrispondenza di $n=30$, come si evince dalla figura~\ref{fig:problema}. La causa era un errore di tipizzazione nella variabile usata per enumerare i sottoinsiemi di vertici: la maschera di bit era rappresentata con un intero a 32 bit con segno, insufficiente a contare fino a $2^{30}$ sottoinsiemi senza andare in overflow.
+Il primo tentativo di esecuzione del pilot ha subito mostrato perché la fase pilota non è un passaggio superfluo. 
+L'implementazione della forza bruta smetteva di funzionare correttamente in corrispondenza di $n=30$, come si evince dalla figura~\ref{fig:problema}. 
+La causa era un errore di tipizzazione nella variabile usata per enumerare i sottoinsiemi di vertici. 
+Infatti, la maschera di bit era rappresentata con un intero a 32 bit con segno, insufficiente a contare fino a $2^{30}$ sottoinsiemi senza andare in overflow.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\linewidth]{Immagini/pilota/cardinalita_problema.png }
@@ -27,7 +31,7 @@ for (int mask = 0; mask < (1 << n); mask++) {
 }
 \end{lstlisting}
 
-La correzione è consistita nel passare a un tipo a 64 bit senza segno, sufficiente a rappresentare correttamente $2^n$ anche per valori di $n$ ben oltre quelli usati in questo pilot:
+La correzione è consistita nel passare a un tipo a 64 bit senza segno, sufficiente a rappresentare correttamente $2^n$ anche per valori di $n$ ben oltre quelli usati in questo pilot.
 
 \begin{lstlisting}[language=C++, caption={Versione corretta: maschera a 64 bit senza segno}]
 for (unsigned long long mask = 0; mask < (1ULL << n); mask++) {
@@ -35,7 +39,7 @@ for (unsigned long long mask = 0; mask < (1ULL << n); mask++) {
 }
 \end{lstlisting}
 
-Questo bug è precisamente il tipo di problema che un esperimento pilota è pensato per intercettare: un errore che sarebbe potuto passare inosservato se il primo test fosse stato direttamente la campagna sperimentale su larga scala, con il rischio di scoprire i dati compromessi solo a posteriori, a ore di calcolo già spese.
+Questo bug è precisamente il tipo di problema che un esperimento pilota è pensato per intercettare. Un errore che sarebbe potuto passare inosservato se il primo test fosse stato direttamente la campagna sperimentale su larga scala, con il rischio di scoprire i dati compromessi solo a posteriori, a ore di calcolo già spese.
 
 \section{Secondo tentativo: risultati}
 
@@ -48,7 +52,10 @@ Con la correzione applicata, il pilot è stato rieseguito. La Figura~\ref{fig:pi
     \label{fig:pilot-cardinalita}
 \end{figure}
 
-Il risultato atteso si conferma: i tre algoritmi esatti (forza bruta, branch-and-bound, ILP) restituiscono sempre la stessa cardinalità, su tutti e dieci i grafi -- le tre curve corrispondenti sono sovrapposte nel grafico. Gli algoritmi greedy e 2-approssimato trovano invece una soluzione valida ma non sempre ottima: il greedy resta quasi sempre molto vicino al valore ottimo (a volte lo raggiunge esattamente, ad esempio su \texttt{pilot\_dense\_n30}, dove tutti e cinque gli algoritmi restituiscono 24), mentre il 2-approssimato se ne allontana in modo più marcato e sistematico, restando comunque sempre entro il fattore 2 dimostrato nel Capitolo~1 -- si veda il Capitolo~5 per un'analisi quantitativa del rapporto di approssimazione su un campione più ampio.
+Il risultato atteso si conferma. 
+I tre algoritmi esatti (forza bruta, branch-and-bound, ILP) restituiscono sempre la stessa cardinalità, su tutti e dieci i grafici. 
+Gli algoritmi greedy e 2-approssimato trovano invece una soluzione valida ma non sempre ottima. 
+Il greedy resta quasi sempre molto vicino al valore ottimo o lo raggiunge, mentre il 2-approssimato se ne allontana in modo più marcato e sistematico, restando comunque sempre entro il fattore 2 dimostrato nel Capitolo~1.
 
 \section{Prestazioni}
 
@@ -68,32 +75,14 @@ Le Figure~\ref{fig:pilot-tempo-sparso} e~\ref{fig:pilot-tempo-denso} riportano i
     \label{fig:pilot-tempo-denso}
 \end{figure}
 
-Una prima osservazione, valida per tutti e cinque gli algoritmi, è che i tempi sui grafi sparsi sono sistematicamente inferiori a quelli sui grafi densi a parità di $n$: ad esempio il branch-and-bound impiega $1.55\times10^{-4}$s su \texttt{pilot\_sparse\_n30} contro $0.574$s su \texttt{pilot\_dense\_n30}, e la forza bruta $14.2$s contro $46.9$s. È il comportamento atteso: a parità di numero di vertici, un grafo più denso ha più vincoli da soddisfare e uno spazio di ricerca meno facilmente potabile.
+Una prima osservazione, valida per tutti e cinque gli algoritmi, è che i tempi sui grafi sparsi sono sistematicamente inferiori a quelli sui grafi densi a parità di $n$. 
+È il comportamento atteso. Infatti, a parità di numero di vertici, un grafo più denso ha più vincoli da soddisfare e uno spazio di ricerca meno facilmente potabile.
 
 Guardando l'andamento di ciascun algoritmo al crescere di $n$:
 
 \begin{itemize}
-    \item \textbf{Forza bruta}: crescita nettamente esponenziale in entrambi i grafici, coerente con la complessità $O(2^n \cdot (|V|+|E|))$ discussa nel Capitolo~1 -- è l'algoritmo che degrada più rapidamente, ed è già impraticabile oltre questo range di $n$.
-    \item \textbf{Branch-and-bound}: anch'esso di andamento esponenziale nel caso peggiore, ma con una base molto più favorevole grazie alla potatura -- si mantiene ordini di grandezza sotto la forza bruta per tutto il range testato.
-    \item \textbf{ILP (Gurobi)}: qui va fatta una precisazione importante. Il grafico mostra un andamento quasi piatto, che potrebbe suggerire un comportamento polinomiale -- ma l'ILP resta un metodo esatto per un problema NP-hard, e nel caso peggiore la sua complessità è comunque esponenziale quanto quella del branch-and-bound, non polinomiale. Quello che i dati mostrano è che, nel range di $n$ testato, non si è ancora raggiunto il punto in cui il motore branch-and-cut di Gurobi inizia a degradare: il suo "muro" pratico è chiaramente più lontano di quello del branch-and-bound scritto per questa tesi, ma resta un muro, non un'assenza di muro. È un'osservazione che verrà approfondita nella campagna sperimentale vera (RQ1, Capitolo~3).
-    \item \textbf{Greedy e 2-approssimato}: questi sì sono polinomiali, non solo empiricamente ma per costruzione ($O(|V|+|E|)$, Capitolo~1) -- ed è esattamente ciò che si osserva: tempi dell'ordine dei microsecondi, praticamente costanti su tutto il range testato, ordini di grandezza sotto tutti e tre i metodi esatti.
+    \item \textbf{Forza bruta}: crescita nettamente esponenziale in entrambi i grafici, coerente con la complessità $O(2^n \cdot (|V|+|E|))$ discussa nel Capitolo~1.    
+    \item \textbf{Branch-and-bound}: anch'esso di andamento esponenziale nel caso peggiore, ma con una base molto più favorevole grazie alla potatura. 
+    \item \textbf{ILP (Gurobi)}: Il grafico mostra un andamento quasi piatto, che potrebbe suggerire un comportamento polinomiale, ma l'ILP resta un metodo esatto per un problema NP-hard, e nel caso peggiore la sua complessità è comunque esponenziale quanto quella del branch-and-bound, non polinomiale. Quello che i dati mostrano è che, nel range di $n$ testato, non si è ancora raggiunto il punto in cui il motore inizia a degradare. È un'osservazione che verrà approfondita nella campagna sperimentale vera.
+    \item \textbf{Greedy e 2-approssimato}: questi sono polinomiali, non solo empiricamente ma per costruzione ($O(|V|+|E|)$, Capitolo~1), ed è esattamente ciò che si osserva. I tempi sono dell'ordine dei microsecondi, praticamente costanti su tutto il range testato, ordini di grandezza sotto tutti e tre i metodi esatti.
 \end{itemize}
-
-Un'ultima osservazione, di metodo più che di risultato: sui grafi sparsi il branch-and-bound è quasi sempre più veloce dell'ILP (es. $n=30$: $1.55\times10^{-4}$s contro $1.79\times10^{-3}$s), mentre sui grafi densi l'ILP supera il branch-and-bound a partire da $n=25$ (rispettivamente $0.011$s contro $0.030$s, e a $n=30$ $0.008$s contro $0.574$s). Questo suggerisce che il vantaggio di Gurobi non è uniforme, ma dipende dalla densità del grafo -- un'ipotesi da verificare con la campagna sperimentale su un range di $n$ più ampio.
-
-\begin{table}[htbp]
-    \centering
-    \begin{tabular}{@{}lrrrrr@{}}
-        \toprule
-        & Forza bruta & B\&B & ILP & 2-Approx & Greedy \\
-        \midrule
-        $n=30$ sparso, cardinalità & 15 & 15 & 15 & 26 & 16 \\
-        $n=30$ sparso, tempo (s)  & 14.239 & 0.000155 & 0.00179 & 0.000004 & 0.000008 \\
-        \midrule
-        $n=30$ denso, cardinalità & 24 & 24 & 24 & 30 & 24 \\
-        $n=30$ denso, tempo (s)   & 46.941 & 0.573879 & 0.00778 & 0.000008 & 0.000013 \\
-        \bottomrule
-    \end{tabular}
-    \caption{Sintesi dei risultati del pilot su $n=30$, sparso e denso.}
-    \label{tab:pilot-n30}
-\end{table}

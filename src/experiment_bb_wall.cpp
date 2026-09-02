@@ -2,13 +2,11 @@
 using namespace std;
 #include <filesystem>
 #include "../data/graph.h"
+#include "experiment_common.h"
 
 // Esperimento 1: trova il muro esponenziale del B&B, separatamente per
 // grafi sparsi e densi (i due muri sono troppo distanti per condividere lo
-// stesso range). Tecnica: doubling experiment con early stopping (DOE,
-// Guideline 2.7) -- si parte da n0, si raddoppia ad ogni passo, e ci si
-// ferma da soli un passo dopo il primo TIME_LIMIT, invece di usare una
-// lista di n decisa a tavolino.
+// stesso range). 
 //
 // Uso:
 //   ./experiment_bb_wall --n0 10 --densities sparse dense --reps 3
@@ -17,29 +15,18 @@ using namespace std;
 //                         --graph-dir data/exp1 [--skip-existing]
 
 struct Args {
-    int n0 = 10;
-    vector<string> densities = {"sparse", "dense"};
-    int reps = 3;
-    int seedBase = 1000;
-    double timeout = 120.0;
-    int confirmSteps = 1;
-    int maxDoublings = 15;
-    string output = "results/exp1_bb_wall.csv";
-    string graphDir = "data/exp1";
-    bool skipExisting = false;
+    int n0 = 10;                                    // n di partenza del doubling
+    vector<string> densities = {"sparse", "dense"}; // livelli da testare, uno per volta
+    int reps = 3;                                   // ripetizioni (grafi diversi) per ogni n
+    int seedBase = 1000;                             // seed della ripetizione 0; le altre sono seedBase+rep
+    double timeout = 120.0;                          // limite di tempo passato al B&B, in secondi
+    int confirmSteps = 1;                            // raddoppi di conferma dopo il primo TIME_LIMIT
+    int maxDoublings = 15;                           // valvola di sicurezza: tetto massimo di raddoppi
+    string output = "results/exp1_bb_wall.csv";      // CSV condiviso su cui si appende una riga per trial
+    string graphDir = "data/exp1";                   // dove salvare i grafi generati, per riproducibilita'
 };
 
-static double sparseAvgDegree(int n) { return round(2.0 * log((double)n) * 100.0) / 100.0; }
-static double denseAvgDegree(int n) { return round((n / 2.0) * 100.0) / 100.0; }
-
-static vector<string> collectValues(int& i, int argc, char* argv[]) {
-    vector<string> vals;
-    while (i + 1 < argc && string(argv[i + 1]).rfind("--", 0) != 0) {
-        vals.push_back(argv[++i]);
-    }
-    return vals;
-}
-
+// Legge i flag da riga di comando sovrascrivendo i default di Args.
 static Args parseArgs(int argc, char* argv[]) {
     Args a;
     for (int i = 1; i < argc; i++) {
@@ -55,37 +42,38 @@ static Args parseArgs(int argc, char* argv[]) {
         else if (flag == "--max-doublings") a.maxDoublings = stoi(argv[++i]);
         else if (flag == "--output") a.output = argv[++i];
         else if (flag == "--graph-dir") a.graphDir = argv[++i];
-        else if (flag == "--skip-existing") a.skipExisting = true;
         else { cerr << "Argomento sconosciuto: " << flag << "\n"; exit(1); }
     }
     return a;
 }
 
-static set<pair<string,string>> loadDone(const string& path) {
-    set<pair<string,string>> done;
-    ifstream fin(path);
-    if (!fin) return done;
-    string line;
-    getline(fin, line);
-    while (getline(fin, line)) {
-        stringstream ss(line);
-        string nNodi, grafo, algo;
-        getline(ss, nNodi, ',');
-        getline(ss, grafo, ',');
-        getline(ss, algo, ',');
-        done.insert({grafo, algo});
-    }
-    return done;
-}
+// Esegue un singolo trial (un grafo, un algoritmo, un n) e ne registra l'esito.
+// Ritorna true se il trial ha dato TIME_LIMIT, false altrimenti: il chiamante usa
+// questo booleano per decidere quando e' stato trovato il muro.
+static bool runTrial(int n, const string& density, int seed, double avgDeg, const Args& args) {
+    // Etichetta univoca del design point (n, densita', seed): identifica la riga
+    // nel CSV e il file su disco del grafo usato per generarla.
+    string label = "n" + to_string(n) + "_" + density + "_s" + to_string(seed);
+    string graphPath = args.graphDir + "/" + label + ".txt";
 
-static void appendCsvRow(const string& path, int n, const string& label, const string& algo,
-                          double sec, int cardinality, const string& status) {
-    bool writeHeader = !filesystem::exists(path);
-    ofstream csv(path, ios::app);
-    if (writeHeader)
-        csv << "N_Nodi,Grafo,Algoritmo,CPU_Time_sec,Cardinalita,Status\n";
-    csv << n << "," << label << "," << algo << "," << fixed << setprecision(6) << sec
-        << "," << cardinality << "," << status << "\n";
+    Graph G = generateErdosRenyiByAvgDegree(n, avgDeg, (unsigned)seed);
+
+    auto t0 = chrono::steady_clock::now();
+    ExactResult r = exactVertexCoverStats(G, args.timeout);
+    auto t1 = chrono::steady_clock::now();
+    double sec = chrono::duration<double>(t1 - t0).count();
+
+    // Controllo di sanita': anche in caso di TIME_LIMIT, la soluzione parziale
+    // restituita deve comunque essere un cover valido.
+    if (!isValidCover(G, r.cover)) {
+        cerr << "ERRORE: B&B ha restituito un cover NON valido su " << graphPath << "\n";
+        exit(2);
+    }
+    string status = r.timedOut ? "TIME_LIMIT" : "OPTIMAL";
+    appendCsvRow(args.output, n, label, "bb", sec, (int)r.cover.size(), status);
+    cout << "  n=" << n << " seed=" << seed << ": " << fixed << setprecision(3)
+         << sec << "s (" << status << ")" << endl;
+    return r.timedOut;
 }
 
 int main(int argc, char* argv[]) {
@@ -93,50 +81,40 @@ int main(int argc, char* argv[]) {
     filesystem::create_directories(args.graphDir);
     filesystem::create_directories(filesystem::path(args.output).parent_path());
 
-    set<pair<string,string>> done;
-    if (args.skipExisting) done = loadDone(args.output);
-
+    // Sparso e denso vengono trattati come due esperimenti indipendenti in sequenza
     for (const string& density : args.densities) {
         cout << "=== Densita': " << density << " ===" << endl;
         int n = args.n0;
+
+        // wallStep = -1: muro non ancora trovato.
+        // wallStep >= 0: muro trovato, conta quanti raddoppi di conferma sono
+        // gia' passati da quel momento 
         int wallStep = -1;
 
         for (int step = 0; step < args.maxDoublings; step++) {
             double avgDeg = (density == "sparse") ? sparseAvgDegree(n) : denseAvgDegree(n);
             bool anyTimeout = false;
 
+            // reps grafi diversi allo stesso n, con seed distinti ma deterministici:
+            // basta un TIME_LIMIT su una sola ripetizione per considerare n "a rischio",
+            // cosi' da non perdere un muro che si manifesta solo su certe istanze
             for (int rep = 0; rep < args.reps; rep++) {
                 int seed = args.seedBase + rep;
-                string label = "n" + to_string(n) + "_" + density + "_s" + to_string(seed);
-                string graphPath = args.graphDir + "/" + label + ".txt";
-
-                Graph G = generateErdosRenyiByAvgDegree(n, avgDeg, (unsigned)seed);
-                writeGraphToFile(G, graphPath);
-
-                if (!done.count({label, "bb"})) {
-                    auto t0 = chrono::steady_clock::now();
-                    ExactResult r = exactVertexCoverStats(G, args.timeout);
-                    auto t1 = chrono::steady_clock::now();
-                    double sec = chrono::duration<double>(t1 - t0).count();
-
-                    if (!isValidCover(G, r.cover)) {
-                        cerr << "ERRORE: B&B ha restituito un cover NON valido su " << graphPath << "\n";
-                        return 2;
-                    }
-                    string status = r.timedOut ? "TIME_LIMIT" : "OPTIMAL";
-                    if (r.timedOut) anyTimeout = true;
-                    appendCsvRow(args.output, n, label, "bb", sec, (int)r.cover.size(), status);
-                    cout << "  n=" << n << " seed=" << seed << ": " << fixed << setprecision(3)
-                         << sec << "s (" << status << ")" << endl;
-                }
+                if (runTrial(n, density, seed, avgDeg, args)) anyTimeout = true;
             }
 
             if (anyTimeout && wallStep == -1) {
+                // Primo timeout osservato a questo n: segna l'inizio della fase
+                // di conferma, ma non ci si ferma subito.
                 wallStep = 0;
                 cout << ">>> Muro trovato per " << density << " a n=" << n << endl;
             } else if (wallStep >= 0) {
+                // Gia' oltre il primo timeout: si e' in fase di conferma,
+                // a prescindere dal fatto che anche questo passo abbia avuto timeout.
                 wallStep++;
             }
+            // Ci si ferma un passo di raddoppio dopo il primo timeout (non subito),
+            // per non scambiare un timeout isolato per il muro vero e proprio.
             if (wallStep >= args.confirmSteps) break;
 
             n *= 2;

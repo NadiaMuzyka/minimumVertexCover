@@ -2,18 +2,10 @@
 CXX = g++
 CXXFLAGS = -O2 -std=c++17 -Wall
 
-# Eseguibili attualmente esistenti nel progetto:
-# - mvc: demo manuale (un grafo, un algoritmo alla volta)
-# - gen_pilot: generatore da riga di comando (Erdos-Renyi by avg degree)
-# - experiment_bb_wall: Esperimento 1, muro esponenziale del B&B
-# - experiment_ilp_wall: Esperimento 2, muro esponenziale dell'ILP
-# Man mano che scriviamo i driver di qualita' e scalabilita', i rispettivi
-# target vanno aggiunti qui sotto.
+
 TARGETS = mvc gen_pilot experiment_bb_wall experiment_ilp_wall experiment_approx_growth experiment_greedy_growth experiment_quality
 
-# Object file comuni agli eseguibili che usano gli algoritmi (mvc ed
-# experiment_bb_wall): gen_pilot ed experiment_ilp_wall non ne hanno
-# bisogno, usano solo il generatore.
+# Object file comuni agli eseguibili che usano gli algoritmi (
 OBJS = data/utils.o src/approx.o src/greedy.o src/exact_branch_and_bound.o src/brute_force.o
 
 # Target di default: `make` o `make all` costruisce tutti gli eseguibili.

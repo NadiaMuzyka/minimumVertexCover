@@ -10,16 +10,8 @@ typedef std::vector<std::vector<int>> Graph;
 
 // --- Funzioni di Utilità (utils.cpp) ---
 
-// Risultato del parsing di un file edge-list stile SNAP: gli id originali
-// (arbitrari) vengono rimappati a indici 0..n-1; idx2id permette di
-// ritradurli per l'output.
-struct ParsedGraph {
-    Graph G;
-    std::vector<int> idx2id;
-    int numEdges;
-};
-
-ParsedGraph readGraphFromFile(const std::string& path);
+// Legge un file edge-list "u v" per riga (righe vuote o che iniziano per '#' ignorate). 
+Graph readGraphFromFile(const std::string& path);
 void writeGraphToFile(const Graph& G, const std::string& path);
 
 // Generatori sintetici (per esperimenti di scalabilita'/NP-hardness).
@@ -27,9 +19,8 @@ Graph generateErdosRenyi(int n, double p, unsigned seed);
 Graph generateErdosRenyiByAvgDegree(int n, double avgDegree, unsigned seed);
 
 // Stesso modello G(n,p) di generateErdosRenyi, ma O(n + m) invece di
-// O(n^2): salta direttamente da un arco al successivo (Batagelj & Brandes,
-// 2005) invece di testare ogni coppia. Utile quando n e' grande, specie
-// sui grafi sparsi (dove generateErdosRenyi resta O(n^2) per costruire il
+// O(n^2): salta direttamente da un arco al successivo invece di testare ogni coppia. 
+//Utile quando n e' grande, specie sui grafi sparsi per costruire il
 // grafo anche se gli archi effettivi sono pochi). Consuma il generatore
 // casuale in modo diverso da generateErdosRenyi: stesso seed, grafo
 // diverso -- non intercambiabili ai fini della riproducibilita'.

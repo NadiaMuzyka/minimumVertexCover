@@ -1,5 +1,6 @@
 \babel@toc {italian}{}\relax 
 \babel@toc {italian}{}\relax 
+\contentsline {chapter}{Introduzione}{3}{chapter*.2}%
 \contentsline {chapter}{\numberline {1}Cenni teorici}{4}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Definizione del problema}{4}{section.1.1}%
 \contentsline {section}{\numberline {1.2}Algoritmi approssimazione e euristiche}{4}{section.1.2}%
@@ -36,26 +37,27 @@
 \contentsline {section}{\numberline {4.1}Configurazione}{21}{section.4.1}%
 \contentsline {section}{\numberline {4.2}Primo tentativo: un bug nella forza bruta}{21}{section.4.2}%
 \contentsline {section}{\numberline {4.3}Secondo tentativo: risultati}{22}{section.4.3}%
-\contentsline {section}{\numberline {4.4}Prestazioni}{23}{section.4.4}%
-\contentsline {chapter}{\numberline {5}Sperimentazione}{26}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Impostazione comune agli esperimenti}{26}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Esperimento 1: il limite pratico del Branch-and-Bound}{26}{section.5.2}%
-\contentsline {subsection}{\numberline {5.2.1}Obiettivo}{27}{subsection.5.2.1}%
-\contentsline {subsection}{\numberline {5.2.2}Metodologia}{27}{subsection.5.2.2}%
-\contentsline {subsection}{\numberline {5.2.3}Risultati}{27}{subsection.5.2.3}%
-\contentsline {subsection}{\numberline {5.2.4}Discussione}{28}{subsection.5.2.4}%
-\contentsline {section}{\numberline {5.3}Esperimento 2: il limite pratico dell'ILP}{28}{section.5.3}%
-\contentsline {subsection}{\numberline {5.3.1}Obiettivo}{28}{subsection.5.3.1}%
-\contentsline {subsection}{\numberline {5.3.2}Metodologia}{28}{subsection.5.3.2}%
-\contentsline {subsection}{\numberline {5.3.3}Risultati}{28}{subsection.5.3.3}%
-\contentsline {subsection}{\numberline {5.3.4}Discussione}{29}{subsection.5.3.4}%
-\contentsline {section}{\numberline {5.4}Esperimento 3: l'andamento di 2-approssimato e greedy}{29}{section.5.4}%
-\contentsline {subsection}{\numberline {5.4.1}Obiettivo}{29}{subsection.5.4.1}%
-\contentsline {subsection}{\numberline {5.4.2}Metodologia}{30}{subsection.5.4.2}%
-\contentsline {subsection}{\numberline {5.4.3}Risultati}{30}{subsection.5.4.3}%
-\contentsline {subsection}{\numberline {5.4.4}Discussione}{32}{subsection.5.4.4}%
-\contentsline {section}{\numberline {5.5}Esperimento 4: la qualità di 2-approssimato e greedy}{32}{section.5.5}%
-\contentsline {subsection}{\numberline {5.5.1}Obiettivo}{32}{subsection.5.5.1}%
-\contentsline {subsection}{\numberline {5.5.2}Metodologia}{32}{subsection.5.5.2}%
-\contentsline {subsection}{\numberline {5.5.3}Risultati}{32}{subsection.5.5.3}%
-\contentsline {subsection}{\numberline {5.5.4}Discussione}{34}{subsection.5.5.4}%
+\contentsline {section}{\numberline {4.4}Prestazioni}{22}{section.4.4}%
+\contentsline {chapter}{\numberline {5}Sperimentazione}{25}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Impostazione comune agli esperimenti}{25}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Esperimento 1: il limite pratico del Branch-and-Bound}{25}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Obiettivo}{25}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Metodologia}{26}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Risultati}{26}{subsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.2.4}Discussione}{27}{subsection.5.2.4}%
+\contentsline {section}{\numberline {5.3}Esperimento 2: il limite pratico dell'ILP}{27}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Obiettivo}{27}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}Metodologia}{27}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Risultati}{27}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}Discussione}{27}{subsection.5.3.4}%
+\contentsline {section}{\numberline {5.4}Esperimento 3: l'andamento di 2-approssimato e greedy}{28}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Obiettivo}{28}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Metodologia}{29}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.3}Risultati}{29}{subsection.5.4.3}%
+\contentsline {subsection}{\numberline {5.4.4}Discussione}{31}{subsection.5.4.4}%
+\contentsline {section}{\numberline {5.5}Esperimento 4: la qualità di 2-approssimato e greedy}{31}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Obiettivo}{31}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Metodologia}{31}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}Risultati}{31}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}Discussione}{33}{subsection.5.5.4}%
+\contentsline {chapter}{Conclusioni}{34}{chapter*.19}%

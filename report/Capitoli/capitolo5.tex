@@ -13,19 +13,14 @@ nel pilot. Si parte da un $n_0$ piccolo e si raddoppia ad ogni passo,
 invece di fissare a tavolino una lista di valori. 
 Rispetto al pilot, però, qui il criterio di stop diventa parte integrante del disegno 
 sperimentale, non solo un modo per contenere i tempi. Per gli esperimenti che cercano 
-un \emph{muro}, cioè dove un metodo esatto smette di essere praticabile, 
+un muro, cioè dove un metodo esatto smette di essere praticabile, 
 il raddoppio continua finché non si osserva il primo timeout, dopo di che si esegue un 
 passo di raddoppio aggiuntivo a titolo di conferma, e ci si ferma. Questo evita sia 
 di fermarsi su un timeout isolato (che potrebbe essere un caso limite) sia di continuare 
 a raddoppiare ben oltre il punto in cui la risposta è ormai chiara.
 
-Un secondo elemento comune è il timeout, fissato a 120 secondi per tutti i metodi
- esatti (Branch-and-Bound, ILP). Non è un dettaglio implementativo lasciato implicito: è una scelta metodologica dichiarata esplicitamente. 
-Un timeout non dichiarato renderebbe i risultati non riproducibili da chi legge.
-
-Infine, ogni design point viene ripetuto su n seed diversi, non su una singola istanza. 
-Serve a distinguere un comportamento sistematico da un caso isolato dovuto al singolo grafo generato -- cosa che, come si vedrà nell'Esperimento 1, fa davvero la differenza.
-
+Ogni design point viene ripetuto su n grafi diversi, non su una singola istanza, tutti con lo stesso numero di vertici. 
+Serve a distinguere un comportamento sistematico da un caso isolato dovuto al singolo grafo generato.
 \section{Esperimento 1: il limite pratico del Branch-and-Bound}
 
 \subsection{Obiettivo}
@@ -60,7 +55,6 @@ come atteso, ma con un muro raggiunto a dimensioni molto diverse: sullo sparso i
 Proprio a $n=40$ denso, però, i dati mostrano qualcosa di più interessante di un semplice timeout uniforme. 
 Delle tre ripetizioni allo stesso $n$, due vanno in timeout mentre la terza risolve comunque, in 43.3 secondi.
 Ciò indica che il comportamento del B\&B non è uniforme, e che la dimensione in sé non è l'unico fattore determinante. 
-Il seed può fare la differenza tra un timeout e una soluzione ottima in meno di un minuto.
 
 \begin{table}[htbp]
     \centering
@@ -186,7 +180,7 @@ Il caso più pulito è il 2-approssimato sullo sparso.
 Si stabilizza correttamente entro la tolleranza a $n=16000$, con una pendenza di 0.97 sostanzialmente lineare, coerente con $O(|V|+|E|)$ quando $|E|\sim n\log n$. 
 
 Negli altri tre casi (2-approssimato denso, greedy sparso, greedy denso) l'esperimento si è fermato per una delle valvole di sicurezza prima di soddisfare formalmente il criterio di stabilizzazione. 
-Ad esempio, sul 2-approssimato denso l'ultimo rapporto disponibile (4.01) si discosta del 31\% dal precedente, appena sopra la soglia del 25\%. Il segnale resta comunque chiaro anche senza una stabilizzazione formale: la pendenza del greedy, sia sparso (2.13) che denso (2.08), è vicina a 2 in entrambi i casi e coerente con il termine $O(|V|^2)$ che, per costruzione, domina indipendentemente dalla densità del grafo (Capitolo~1). 
+Ad esempio, sul greedy l'ultimo rapporto disponibile (4.01) si discosta del 31\% dal precedente, appena sopra la soglia del 25\%. Il segnale resta comunque chiaro anche senza una stabilizzazione formale: la pendenza del greedy, sia sparso (2.13) che denso (2.08), è vicina a 2 in entrambi i casi e coerente con il termine $O(|V|^2)$ che, per costruzione, domina indipendentemente dalla densità del grafo (Capitolo~1). 
 
 Il 2-approssimato sul denso mostra una pendenza intermedia (1.70), meno netta ma comunque ben lontana dal comportamento lineare dello sparso, in direzione di $O(n^2)$ come atteso quando $|E|\sim n^2/4$ domina su $|V|$.
 
@@ -214,16 +208,59 @@ Per ciascun grafo generato vengono eseguiti tutti e tre gli algoritmi (2-appross
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.9\linewidth]{esperimento4/ratio_sparse.png}
-    \caption{Rapporto cardinalità/OPT di 2-approssimato e greedy -- grafi sparsi.}
-    \label{fig:exp4-ratio-sparse}
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{esperimento4/cardinalita_sparse.png}
+        \caption{Grafi sparsi.}
+        \label{fig:exp4-cardinalita-sparse}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{esperimento4/cardinalita_dense.png}
+        \caption{Grafi densi.}
+        \label{fig:exp4-cardinalita-dense}
+    \end{subfigure}
+    \caption{Cardinalità di 2-approssimato e greedy rispetto all'ottimo.}
+    \label{fig:exp4-cardinalita}
 \end{figure}
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.9\linewidth]{esperimento4/ratio_dense.png}
-    \caption{Rapporto cardinalità/OPT di 2-approssimato e greedy -- grafi densi.}
-    \label{fig:exp4-ratio-dense}
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{esperimento4/ratio_sparse.png}
+        \caption{Grafi sparsi.}
+        \label{fig:exp4-ratio-sparse}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{esperimento4/ratio_dense.png}
+        \caption{Grafi densi.}
+        \label{fig:exp4-ratio-dense}
+    \end{subfigure}
+    \caption{Rapporto cardinalità/OPT di 2-approssimato e greedy.}
+    \label{fig:exp4-ratio}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{esperimento4/tempo_sparse.png}
+        \caption{Grafi sparsi.}
+        \label{fig:exp4-tempo-sparse}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{esperimento4/tempo_dense.png}
+        \caption{Grafi densi.}
+        \label{fig:exp4-tempo-dense}
+    \end{subfigure}
+    \caption{Tempo di esecuzione di 2-approssimato e greedy.}
+    \label{fig:exp4-tempo}
 \end{figure}
 
 \begin{table}[htbp]
@@ -242,12 +279,19 @@ Per ciascun grafo generato vengono eseguiti tutti e tre gli algoritmi (2-appross
     \label{tab:exp4-ratio}
 \end{table}
 
-Il \textbf{greedy} resta sistematicamente vicino all'ottimo su tutto il range testato, su entrambe le densità: media 1.018 sul denso e 1.042 sullo sparso, con deviazione standard sotto lo 0.03 in entrambi i casi -- non solo è vicino all'ottimo, lo è in modo consistente, senza oscillazioni marcate al variare di $n$. Il \textbf{2-approssimato} resta sempre ben al di sotto del bound teorico di 2 (il valore massimo osservato, 1.667, è lo stesso su entrambe le densità), ma con un margine molto più ampio dall'ottimo rispetto al greedy.
+Il greedy resta sistematicamente vicino all'ottimo su tutto il range testato, su entrambe le densità: media 1.018 sul denso e 1.042 sullo sparso, con deviazione standard sotto lo 0.03 in entrambi i casi non solo è vicino all'ottimo, lo è in modo consistente, senza oscillazioni marcate al variare di $n$. 
+Il 2-approssimato resta sempre ben al di sotto del bound teorico di 2 (il valore massimo osservato, 1.667, è lo stesso su entrambe le densità), ma con un margine molto più ampio dall'ottimo rispetto al greedy.
 
-Un risultato che a prima vista sorprende: il 2-approssimato ha un rapporto medio \emph{migliore} sui grafi densi (1.136) che su quelli sparsi (1.366), pur con una variabilità maggiore (deviazione standard 0.130 contro 0.073). Sui grafi densi, dove ogni vertice ha molti più archi da coprire, un matching massimale tende ad "azzeccare" più spesso coppie di vertici che fanno parte anche di una soluzione vicina all'ottimo; sui grafi sparsi, dove gli archi sono pochi rispetto a $n$, un singolo abbinamento sub-ottimale nel matching pesa proporzionalmente di più sul risultato finale.
+Un risultato che a prima vista sorprende: il 2-approssimato ha un rapporto medio \emph{migliore} sui grafi densi (1.136) che su quelli sparsi (1.366), pur con una variabilità maggiore (deviazione standard 0.130 contro 0.073). 
+Sui grafi densi, dove ogni vertice ha molti più archi da coprire, un matching massimale tende ad indovinare più spesso coppie di vertici che fanno parte anche di una soluzione vicina all'ottimo. 
+Sui grafi sparsi, dove gli archi sono pochi rispetto a $n$, un singolo abbinamento sub-ottimale nel matching pesa proporzionalmente di più sul risultato finale.
 
 Sul fronte dei tempi, la differenza con l'ILP resta enorme per tutto il range: a $n=180$, il valore più alto testato, l'ILP impiega in media 9.6 secondi sul denso e 13.3 sullo sparso, contro tempi del 2-approssimato e del greedy che restano nell'ordine del millisecondo o meno -- una conferma diretta di quanto già visto negli Esperimenti 1-3.
 
 \subsection{Discussione}
 
-Questo esperimento chiude il cerchio aperto da RQ3 e RQ4. Su RQ4 (il bound teorico del 2-approssimato tiene empiricamente?): sì, senza eccezioni, su 540 istanze il rapporto non supera mai 1.667, ben al di sotto del limite di 2 dimostrato nel Capitolo~1. Su RQ3 (quale euristica è più vicina all'ottimo, e quale più veloce?): il greedy vince nettamente sulla qualità, restando entro pochi punti percentuali dall'ottimo in modo consistente; sulla velocità la differenza tra i due è trascurabile rispetto al confronto con l'ILP -- entrambi restano nell'ordine del millisecondo mentre l'ILP richiede secondi. Il costo del greedy osservato nell'Esperimento 3 ($O(|V|^2+|E|)$ contro $O(|V|+|E|)$ del 2-approssimato) diventa quindi rilevante solo a dimensioni ben oltre quelle testate qui: nel range $n\le 180$, il vantaggio in qualità del greedy non ha ancora un costo pratico percepibile in termini di tempo.
+Questo esperimento chiude il cerchio aperto all'inzio. L'algoritmo 2-approssimato ha confermato il bound teorico. 
+Su 540 istanze il rapporto non supera mai 1.667, ben al di sotto del limite di 2 dimostrato nel Capitolo~1. 
+Da un punto di vista di qualità della soluzione,il greedy vince nettamente, restando entro pochi punti percentuali dall'ottimo in modo consistente. 
+Sulla velocità la differenza tra i due è trascurabile rispetto al confronto con l'ILP. Infatti, entrambi restano nell'ordine del millisecondo mentre l'ILP richiede secondi. 
+Il costo del greedy osservato nell'Esperimento 3 diventa quindi rilevante solo a dimensioni elevate. 

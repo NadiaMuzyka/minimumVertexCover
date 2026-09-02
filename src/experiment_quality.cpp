@@ -3,45 +3,30 @@ using namespace std;
 #include <filesystem>
 #include <sys/wait.h>
 #include "../data/graph.h"
+#include "experiment_common.h"
 
-// Esperimento finale: qualita' -- di quanto si discostano 2-approssimato e
-// greedy dall'ottimo (ILP, verita' di riferimento: l'esperimento 2 ha gia'
-// mostrato che il suo muro e' a n=320, quindi su questo range n=10..200
-// risolve sempre, mai in TIME_LIMIT).
-//
-// A differenza dei muri e della crescita, qui non serve una logica
-// adattiva: e' una griglia fissa di n, la stessa identica su cui si vuole
-// vedere come cambia il rapporto cardinalita'/OPT.
+// Esperimento finale: qualita'. L'obiettivo è capire di quanto si discostano 2-approssimato e
+// greedy dall'ottimo 
 //
 // Uso (da lanciare dalla root del progetto, con il venv gia' attivato):
 //   ./experiment_quality --n-values 10 20 30 ... 200 --densities sparse dense
 //                         --reps 5 --ilp-timeout 120
 //                         --output results/exp_quality.csv
-//                         --graph-dir data/exp_quality [--skip-existing]
+//                         --graph-dir data/exp_quality
 // Se --n-values non e' specificato, il default e' 10,20,...,200.
 
 struct Args {
-    vector<int> nValues;
-    vector<string> densities = {"sparse", "dense"};
-    int reps = 5;
-    int seedBase = 1000;
-    double ilpTimeout = 120.0;
-    string output = "results/exp_quality.csv";
-    string graphDir = "data/exp_quality";
-    bool skipExisting = false;
+    vector<int> nValues;                             // griglia fissa di n da testare (default: 10,20,...,200)
+    vector<string> densities = {"sparse", "dense"}; // livelli da testare, uno per volta
+    int reps = 5;                                    // ripetizioni (grafi diversi) per ogni (n, densita')
+    int seedBase = 1000;                             // seed della ripetizione 0; le altre sono seedBase+rep
+    double ilpTimeout = 120.0;                       // limite di tempo passato a Gurobi (--time-limit), in secondi
+    string output = "results/exp_quality.csv";       // CSV condiviso, righe di approx/greedy/ILP mescolate
+    string graphDir = "data/exp_quality";             // dove salvare i grafi generati, per riproducibilita'
 };
 
-static double sparseAvgDegree(int n) { return round(2.0 * log((double)n) * 100.0) / 100.0; }
-static double denseAvgDegree(int n) { return round((n / 2.0) * 100.0) / 100.0; }
-
-static vector<string> collectValues(int& i, int argc, char* argv[]) {
-    vector<string> vals;
-    while (i + 1 < argc && string(argv[i + 1]).rfind("--", 0) != 0) {
-        vals.push_back(argv[++i]);
-    }
-    return vals;
-}
-
+// Legge i flag da riga di comando sovrascrivendo i default di Args.
+// --n-values e --densities sono a valore multiplo (si veda collectValues).
 static Args parseArgs(int argc, char* argv[]) {
     Args a;
     for (int i = 1; i < argc; i++) {
@@ -57,7 +42,6 @@ static Args parseArgs(int argc, char* argv[]) {
         else if (flag == "--ilp-timeout") a.ilpTimeout = stod(argv[++i]);
         else if (flag == "--output") a.output = argv[++i];
         else if (flag == "--graph-dir") a.graphDir = argv[++i];
-        else if (flag == "--skip-existing") a.skipExisting = true;
         else { cerr << "Argomento sconosciuto: " << flag << "\n"; exit(1); }
     }
     if (a.nValues.empty())
@@ -65,38 +49,54 @@ static Args parseArgs(int argc, char* argv[]) {
     return a;
 }
 
-static set<pair<string,string>> loadDone(const string& path) {
-    set<pair<string,string>> done;
-    ifstream fin(path);
-    if (!fin) return done;
-    string line;
-    getline(fin, line);
-    while (getline(fin, line)) {
-        stringstream ss(line);
-        string nNodi, grafo, algo;
-        getline(ss, nNodi, ','); getline(ss, grafo, ','); getline(ss, algo, ',');
-        done.insert({grafo, algo});
-    }
-    return done;
-}
+// Esegue approx, greedy (in-process) e ILP (sottoprocesso Python) sullo
+// STESSO grafo generato una sola volta, scrivendo tutte e tre le righe nel
+// CSV: e' quello che rende confrontabile il rapporto cardinalita'/OPT dei
+// tre algoritmi punto per punto, invece che su istanze diverse.
+static void runTrial(int n, const string& density, int seed, double avgDeg, const Args& args) {
+    string label = "n" + to_string(n) + "_" + density + "_s" + to_string(seed);
+    string graphPath = args.graphDir + "/" + label + ".txt";
 
-static void appendCsvRow(const string& path, int n, const string& label, const string& algo,
-                          double sec, int cardinality, const string& status) {
-    bool writeHeader = !filesystem::exists(path);
-    ofstream csv(path, ios::app);
-    if (writeHeader)
-        csv << "N_Nodi,Grafo,Algoritmo,CPU_Time_sec,Cardinalita,Status\n";
-    csv << n << "," << label << "," << algo << "," << fixed << setprecision(6) << sec
-        << "," << cardinality << "," << status << "\n";
+    Graph G = generateErdosRenyiByAvgDegree(n, avgDeg, (unsigned)seed);
+    writeGraphToFile(G, graphPath); // serve a exact_ilp.py (Python) per leggerlo
+
+    // 2-approssimato: controllo di sanita' sul cover, poi riga nel CSV.
+    auto t0 = chrono::steady_clock::now();
+    vector<int> coverA = approxVertexCover(G);
+    auto t1 = chrono::steady_clock::now();
+    if (!isValidCover(G, coverA)) {
+        cerr << "ERRORE: approx ha restituito un cover NON valido su " << label << "\n";
+        exit(2);
+    }
+    appendCsvRow(args.output, n, label, "approx",
+                 chrono::duration<double>(t1 - t0).count(), (int)coverA.size(), "HEURISTIC");
+
+    // Greedy: stessa procedura, sullo stesso grafo G.
+    auto t2 = chrono::steady_clock::now();
+    vector<int> coverG = greedyVertexCover(G);
+    auto t3 = chrono::steady_clock::now();
+    if (!isValidCover(G, coverG)) {
+        cerr << "ERRORE: greedy ha restituito un cover NON valido su " << label << "\n";
+        exit(2);
+    }
+    appendCsvRow(args.output, n, label, "greedy",
+                 chrono::duration<double>(t3 - t2).count(), (int)coverG.size(), "HEURISTIC");
+
+    // ILP
+    string cmd = "python3 scripts/exact_ilp.py " + graphPath +
+                 " --time-limit " + to_string(args.ilpTimeout) +
+                 " --output " + args.output;
+    int rc = system(cmd.c_str());
+    if (!WIFEXITED(rc) || WEXITSTATUS(rc) != 0) {
+        cerr << "ERRORE: exact_ilp.py e' fallito su " << graphPath << "\n";
+        exit(3);
+    }
 }
 
 int main(int argc, char* argv[]) {
     Args args = parseArgs(argc, argv);
     filesystem::create_directories(args.graphDir);
     filesystem::create_directories(filesystem::path(args.output).parent_path());
-
-    set<pair<string,string>> done;
-    if (args.skipExisting) done = loadDone(args.output);
 
     int total = (int)args.nValues.size() * (int)args.densities.size() * args.reps;
     int count = 0;
@@ -107,48 +107,10 @@ int main(int argc, char* argv[]) {
 
             for (int rep = 0; rep < args.reps; rep++) {
                 int seed = args.seedBase + rep;
-                string label = "n" + to_string(n) + "_" + density + "_s" + to_string(seed);
-                string graphPath = args.graphDir + "/" + label + ".txt";
                 count++;
-                cout << "[" << count << "/" << total << "] " << label << endl;
-
-                Graph G = generateErdosRenyiByAvgDegree(n, avgDeg, (unsigned)seed);
-                writeGraphToFile(G, graphPath); // serve a exact_ilp.py (Python) per leggerlo
-
-                if (!done.count({label, "approx"})) {
-                    auto t0 = chrono::steady_clock::now();
-                    vector<int> cover = approxVertexCover(G);
-                    auto t1 = chrono::steady_clock::now();
-                    double sec = chrono::duration<double>(t1 - t0).count();
-                    if (!isValidCover(G, cover)) {
-                        cerr << "ERRORE: approx ha restituito un cover NON valido su " << label << "\n";
-                        return 2;
-                    }
-                    appendCsvRow(args.output, n, label, "approx", sec, (int)cover.size(), "HEURISTIC");
-                }
-
-                if (!done.count({label, "greedy"})) {
-                    auto t0 = chrono::steady_clock::now();
-                    vector<int> cover = greedyVertexCover(G);
-                    auto t1 = chrono::steady_clock::now();
-                    double sec = chrono::duration<double>(t1 - t0).count();
-                    if (!isValidCover(G, cover)) {
-                        cerr << "ERRORE: greedy ha restituito un cover NON valido su " << label << "\n";
-                        return 2;
-                    }
-                    appendCsvRow(args.output, n, label, "greedy", sec, (int)cover.size(), "HEURISTIC");
-                }
-
-                if (!done.count({label, "ILP"})) {
-                    string cmd = "python3 scripts/exact_ilp.py " + graphPath +
-                                 " --time-limit " + to_string(args.ilpTimeout) +
-                                 " --output " + args.output;
-                    int rc = system(cmd.c_str());
-                    if (!WIFEXITED(rc) || WEXITSTATUS(rc) != 0) {
-                        cerr << "ERRORE: exact_ilp.py e' fallito su " << graphPath << "\n";
-                        return 3;
-                    }
-                }
+                cout << "[" << count << "/" << total << "] n" << n << "_" << density
+                     << "_s" << seed << endl;
+                runTrial(n, density, seed, avgDeg, args);
             }
         }
     }

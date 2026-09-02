@@ -2,6 +2,9 @@
 using namespace std;
 #include <filesystem>
 #include "../data/graph.h"
+#include "experiment_common.h"
+
+// Driver a riga di comando per un singolo run: un grafo, un algoritmo, un output.
 
 static string graphLabel(const string& path) {
     return filesystem::path(path).stem().string();
@@ -14,11 +17,13 @@ int main(int argc, char* argv[]) {
     const string outputCsv = (argc > 3) ? argv[3] : "results/pilot.csv";
     const double timeoutBb = (argc > 4) ? stod(argv[4]) : 300.0;
 
-    ParsedGraph pg = readGraphFromFile(path);
-    const Graph& G = pg.G;
-    const vector<int>& idx2id = pg.idx2id;
+    Graph G = readGraphFromFile(path);
 
-    cout << "Nodes: " << G.size() << "  Edges: " << pg.numEdges << "\n";
+    long long numEdges = 0;
+    for (auto& adj : G) numEdges += (long long)adj.size();
+    numEdges /= 2;
+
+    cout << "Nodes: " << G.size() << "  Edges: " << numEdges << "\n";
 
     vector<int> cover;
     string status;
@@ -39,10 +44,11 @@ int main(int argc, char* argv[]) {
     double ms = chrono::duration<double, milli>(t1 - t0).count();
 
     cout << "Vertex cover (" << cover.size() << " nodi): ";
-    for (int idx : cover) cout << idx2id[idx] << " ";
+    for (int idx : cover) cout << idx << " ";
     cout << "\n";
     cout << "Cardinalita': " << cover.size() << "\n";
     cout << "Tempo: " << fixed << setprecision(3) << ms << " ms\n";
+
     bool valid = isValidCover(G, cover);
     cout << "Cover valido: " << (valid ? "si" : "NO -- BUG") << "\n";
     if (!valid) {
@@ -53,16 +59,9 @@ int main(int argc, char* argv[]) {
     ofstream fout("results/" + algo + "_cover.txt");
     fout << cover.size() << "\n";
     for (size_t i = 0; i < cover.size(); ++i)
-        fout << idx2id[cover[i]] << (i + 1 < cover.size() ? ' ' : '\n');
+        fout << cover[i] << (i + 1 < cover.size() ? ' ' : '\n');
 
-    filesystem::create_directories(filesystem::path(outputCsv).parent_path());
-    bool writeHeader = !filesystem::exists(outputCsv);
-    ofstream csv(outputCsv, ios::app);
-    if (writeHeader)
-        csv << "N_Nodi,Grafo,Algoritmo,CPU_Time_sec,Cardinalita,Status\n";
-    csv << G.size() << "," << graphLabel(path) << "," << algo << ","
-        << fixed << setprecision(6) << (ms / 1000.0) << ","
-        << cover.size() << "," << status << "\n";
+    appendCsvRow(outputCsv, (int)G.size(), graphLabel(path), algo, ms / 1000.0, (int)cover.size(), status);
 
     return 0;
 }

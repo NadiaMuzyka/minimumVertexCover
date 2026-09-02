@@ -160,7 +160,9 @@ Nel caso peggiore costa $O(|V|+|E|)$, ed è invocata una volta per ogni nodo del
 da \texttt{lowerBoundMatching}, che trova un matching massimale sul grafo residuo con la stessa 
 logica di \texttt{approxVertexCover}.
 
+\begin{sloppypar}
 Su questo lower bound si basa la condizione di potatura \texttt{current.size() + lowerBoundMatching(...) >= best.size()}, la stessa già presente nello pseudocodice del Capitolo 1.
+\end{sloppypar}
 
 Il branching è a sua volta completo. Infatti, per ogni arco residuo $(u,v)$, ogni cover valido deve contenere $u$ o $v$ (o entrambi), altrimenti quell'arco resterebbe scoperto. 
 

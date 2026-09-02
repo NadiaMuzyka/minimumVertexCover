@@ -2,26 +2,17 @@
 using namespace std;
 #include "graph.h"
 
-// Legge un file edge-list stile SNAP ("u v" per riga, righe vuote o che
-// iniziano con '#' ignorate) e rimappa gli id arbitrari a indici 0..n-1.
-ParsedGraph readGraphFromFile(const string& path) {
+Graph readGraphFromFile(const string& path) {
     ifstream fin(path);
     if (!fin) {
         cerr << "Cannot open file: " << path << "\n";
         exit(1);
     }
 
-    unordered_map<int,int> id2idx;
-    vector<int> idx2id;
     vector<pair<int,int>> edges;
     string line;
     int declaredN = -1;
-
-    auto getIdx = [&](int raw) -> int {
-        auto [it, inserted] = id2idx.emplace(raw, (int)id2idx.size());
-        if (inserted) idx2id.push_back(raw);
-        return it->second;
-    };
+    int maxId = -1;
 
     while (getline(fin, line)) {
         if (line.empty()) continue;
@@ -34,30 +25,20 @@ ParsedGraph readGraphFromFile(const string& path) {
         istringstream ss(line);
         int u, v;
         if (!(ss >> u >> v)) continue;
-        int a = getIdx(u), b = getIdx(v);
-        if (a != b)
-            edges.emplace_back(a, b);
+        if (u != v) {
+            edges.emplace_back(u, v);
+            maxId = max({maxId, u, v});
+        }
     }
 
-    if (declaredN > (int)id2idx.size()) {
-        bool idsFitDeclaredRange = true;
-        for (auto& [raw, idx] : id2idx)
-            if (raw < 0 || raw >= declaredN) { idsFitDeclaredRange = false; break; }
-        if (idsFitDeclaredRange)
-            for (int v = 0; v < declaredN; v++)
-                getIdx(v);
-    }
+    int n = max(declaredN, maxId + 1);
 
-    int n = (int)id2idx.size();
-    ParsedGraph result;
-    result.G.assign(n, {});
-    for (auto [a, b] : edges) {
-        result.G[a].push_back(b);
-        result.G[b].push_back(a);
+    Graph G(n);
+    for (auto& [a, b] : edges) {
+        G[a].push_back(b);
+        G[b].push_back(a);
     }
-    result.idx2id = std::move(idx2id);
-    result.numEdges = (int)edges.size();
-    return result;
+    return G;
 }
 
 // Scrive un grafo (indici gia' 0..n-1) come edge-list "u v", un arco per
@@ -119,6 +100,14 @@ bool isValidCover(const Graph& G, const vector<int>& cover) {
     return true;
 }
 
+/*
+generateErdosRenyi (la versione "lenta") scandisce tutte le  
+coppie di vertici e per ciascuna tira una moneta con probabilità $p$: 
+costo O(n^2) anche se il grafo risultante ha pochissimi archi. 
+L'idea di questa versione è: invece di tirare una moneta per ogni coppia, 
+calcolare direttamente quante coppie saltare prima della prossima inclusa — 
+così il costo diventa proporzionale al numero di archi generati (m), 
+non al numero di coppie testate (n^2).*/
 Graph generateErdosRenyiFast(int n, double p, unsigned seed) {
     Graph G(n);
     if (p <= 0.0 || n < 2) return G;
